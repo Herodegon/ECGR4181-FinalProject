@@ -35,6 +35,24 @@
             },
             "problemMatcher": ["$gcc"],
             "detail": "Compiles the testing.cpp file with debugging enabled."
+        },
+        {
+            "label": "build newsim",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-g",
+                "${workspaceFolder}/NewSim.cpp",
+                "${workspaceFolder}/decoder.cpp",
+                "-o",
+                "${workspaceFolder}/NewSim"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": ["$gcc"],
+            "detail": "Compiles the testing.cpp file with debugging enabled."
         }
     ]
 }
