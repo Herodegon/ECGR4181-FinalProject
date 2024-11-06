@@ -19,6 +19,7 @@ using InstructionMap = std::unordered_map<uint32_t, std::unordered_map<int, std:
 #define OPCODE_LOAD         0b0000011
 #define OPCODE_LOAD_FP      0b0000111
 #define OPCODE_I_TYPE       0b0010011
+// #define OPCODE_I_TYPE       0b1000001
 #define OPCODE_AUIPC        0b0010111
 #define OPCODE_S_TYPE       0b0100011
 #define OPCODE_S_TYPE_FP    0b0100111

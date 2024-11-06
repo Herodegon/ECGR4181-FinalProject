@@ -111,6 +111,10 @@ Decoder::Decoder() {}
 // Decode instruction based on opcode
 void Decoder::decodeInstruction(uint32_t instruction) {
     uint8_t opcode = getOpcode(instruction);
+    // std::cout << std::bitset<32>(instruction) << std::endl;
+    // std::cout << std::bitset<7>(opcode) << std::endl;
+    // int x;
+    // std::cin >> x;
     ControlSignals signals = ControlInstructions[opcode];
     InstructionVariables vars;
     std::vector<std::string> printStatement;

@@ -1,5 +1,5 @@
 main:                                   # Addr 0x0
-	addi	sp, sp, -16
+	addi sp, sp, -16
 	sw	ra, 12(sp)
 	sw	s0, 8(sp)
 	addi	s0, sp, 16

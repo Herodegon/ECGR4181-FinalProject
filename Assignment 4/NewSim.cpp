@@ -89,13 +89,30 @@ public:
         registers["x13"] = 0; // Loop counter i
     }
 
-   void load_instructions_from_binary(const std::string& filename) {
+   std::string to_hex_string(uint32_t value) {
+    std::stringstream ss;
+    ss << std::hex << std::setw(8) << std::setfill('0') << value;
+    return ss.str();
+}
+
+// Helper function to convert endianess
+uint32_t swap_endian(uint32_t value) {
+    return ((value >> 24) & 0x000000FF) |
+           ((value >> 8)  & 0x0000FF00) |
+           ((value << 8)  & 0x00FF0000) |
+           ((value << 24) & 0xFF000000);
+}
+
+void load_instructions_from_binary(const std::string& filename) {
     std::ifstream infile(filename, std::ios::binary);
     if (!infile.is_open()) {
         throw std::runtime_error("Could not open binary file: " + filename);
     }
 
-    // Read instructions from the binary file and store them directly.
+    // Vector to store instructions
+    std::vector<Instruction*> instructions;
+
+    // Read instructions from the binary file and store them directly
     while (infile.peek() != std::ifstream::traits_type::eof()) {
         uint32_t instruction;
         infile.read(reinterpret_cast<char*>(&instruction), sizeof(instruction));
@@ -108,7 +125,10 @@ public:
             throw std::runtime_error("Error reading from binary file: " + filename);
         }
 
-        // Convert instruction to hex string and store it in the instructions vector.
+        // Adjust endianness (if required)
+        instruction = swap_endian(instruction);
+
+        // Convert instruction to hex string and store it in the instructions vector
         std::string hex_value = to_hex_string(instruction);
         instructions.push_back(new Instruction(hex_value, instruction, {}, "Binary"));
     }
@@ -151,6 +171,10 @@ public:
 
             int x;
             decoder.decodeInstruction(instruction_value);
+
+            std::cout << "AIFGUI:ATFULSDGFIASFGULAUFGIAGFAUFHAFGAWIF" << std::endl;
+            std::cout << fetched_instr->name << std::endl;
+            std::cout << std::bitset<32>(fetched_instr->binary) << std::endl;
             std::cin >> x;
 
             auto it = instruction_map.find(instruction_name);
