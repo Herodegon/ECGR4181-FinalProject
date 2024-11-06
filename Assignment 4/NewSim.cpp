@@ -40,6 +40,7 @@ class Simulator {
 private:
     int clock_cycle;
     const int clock_cycle_limit;
+    int sim_ticks;
     int pc;                                                     // Program counter
     std::vector<Event> event_list;
     std::map<std::string, Instruction*> pipeline_registers;
@@ -50,7 +51,7 @@ private:
     bool halt;
     int stall_count;
     std::unordered_map<uint32_t, std::string> instruction_map = {
-        {0x1 << 0, "UNKNOWN_0x00000100"},
+        {0x01 << 0, "UNKNOWN_0x00000100"},
         {0x01 << 4, "LOAD_BASE_A"},
         {0x01 << 8, "auipc a0, 0x0"},
         {0x01 << 12, "auipc a1, 0x0"},
@@ -73,7 +74,7 @@ private:
 
 public:
     Simulator(int num_runs = 0) 
-        : clock_cycle(0), clock_cycle_limit(num_runs), pc(0), halt(false), stall_count(0) {
+        : clock_cycle(0), sim_ticks(0), clock_cycle_limit(num_runs), pc(0), halt(false), stall_count(0) {
         pipeline_registers["Fetch"] = nullptr;
         pipeline_registers["Decode"] = nullptr;
         pipeline_registers["Execute"] = nullptr;
@@ -461,7 +462,11 @@ public:
             void run() 
         {
             while (!halt || pipeline_registers["Fetch"] || pipeline_registers["Decode"] || pipeline_registers["Execute"] || pipeline_registers["Store"]) {
-                clock_cycle++;
+                sim_ticks++;
+                if(sim_ticks % 10 == 0) {
+                    clock_cycle++;
+                    sim_ticks = 0;
+                }
                 std::cout << "--------------------------------------------------" << std::endl;
                 store();
                 execute();
