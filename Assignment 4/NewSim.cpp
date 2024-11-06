@@ -12,6 +12,7 @@
 #include <sstream>
 #include <iomanip>
 #include <stdexcept>
+#include "decoder.h"
 
 //====ASSIGNMENT 4 Part 1====
 
@@ -26,12 +27,13 @@ struct Event {
 
 struct Instruction {
     std::string name;
+    uint32_t binary;
     std::vector<std::string> operands;
     std::string type;
     std::string stage;
     double data;
     std::map<std::string, int> cycle_entered;
-    Instruction(std::string n, std::vector<std::string> ops, std::string t) : name(n), operands(ops), type(t), stage("Fetch"), data(0.0) {}
+    Instruction( std::string n, uint32_t b, std::vector<std::string> ops, std::string t) : name(n), binary(b), operands(ops), type(t), stage("Fetch"), data(0.0) {}
 };
 
 const std::vector<std::string> pipeline_stages = {"Fetch", "Decode", "Execute", "Store"};
@@ -73,6 +75,7 @@ private:
     };
 
 public:
+    Decoder decoder;
     Simulator(int num_runs = 0) 
         : clock_cycle(0), sim_ticks(0), clock_cycle_limit(num_runs), pc(0), halt(false), stall_count(0) {
         pipeline_registers["Fetch"] = nullptr;
@@ -107,7 +110,7 @@ public:
 
         // Convert instruction to hex string and store it in the instructions vector.
         std::string hex_value = to_hex_string(instruction);
-        instructions.push_back(new Instruction(hex_value, {}, "Binary"));
+        instructions.push_back(new Instruction(hex_value, instruction, {}, "Binary"));
     }
 
     infile.close();
@@ -143,9 +146,14 @@ public:
     void decode() {
         if (pipeline_registers["Fetch"] != nullptr) {
             Instruction* fetched_instr = pipeline_registers["Fetch"];
-            uint32_t instruction_value = std::stoul(fetched_instr->name, nullptr, 0);
+            uint32_t instruction_name = std::stoul(fetched_instr->name, nullptr, 0);
+            uint32_t instruction_value = fetched_instr->binary;
 
-            auto it = instruction_map.find(instruction_value);
+            int x;
+            decoder.decodeInstruction(instruction_value);
+            std::cin >> x;
+
+            auto it = instruction_map.find(instruction_name);
             if (it != instruction_map.end()) {
                 std::cout << "Cycle " << clock_cycle << ": Decoding instruction: " << it->second << std::endl;
                 execute_instruction(fetched_instr);

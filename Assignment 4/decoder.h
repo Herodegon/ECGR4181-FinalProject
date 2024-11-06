@@ -11,6 +11,28 @@
 #include <bitset>
 #include <limits>
 
+// Define Funct7Map and InstructionMap
+using Funct7Map = std::unordered_map<int, std::string>;
+using InstructionMap = std::unordered_map<uint32_t, std::unordered_map<int, std::variant<std::string, Funct7Map>>>;
+
+// Define RISC-V opcodes
+#define OPCODE_LOAD         0b0000011
+#define OPCODE_LOAD_FP      0b0000111
+#define OPCODE_I_TYPE       0b0010011
+#define OPCODE_AUIPC        0b0010111
+#define OPCODE_S_TYPE       0b0100011
+#define OPCODE_S_TYPE_FP    0b0100111
+#define OPCODE_R_TYPE       0b0110011
+#define OPCODE_LUI          0b0110111
+#define OPCODE_SB_TYPE      0b1100011
+#define OPCODE_JALR         0b1100111
+#define OPCODE_JAL          0b1101111
+
+const int NO_IMMEDIATE = std::numeric_limits<int32_t>::max();
+const int NO_REGISTER = std::numeric_limits<int32_t>::max();
+const int NO_FUNCT3 = std::numeric_limits<int32_t>::max();
+const int NO_FUNCT7 = std::numeric_limits<int32_t>::max();
+
 // Define instruction formats
 enum InstructionFormat {
     FORMAT_R,
@@ -22,94 +44,7 @@ enum InstructionFormat {
 };
 
 // Instruction map
-InstructionMap Instructions = 
-{
-    {
-        OPCODE_LOAD, 
-        {
-            {0b000, "lb"},
-            {0b001, "lh"},
-            {0b010, "lw"},
-            {0b100, "lbu"},
-            {0b101, "lhu"}
-        }
-    },
-    {
-        OPCODE_I_TYPE, 
-        {
-            {0b000, "addi"},
-            {0b001, "slli"},
-            {0b010, "slti"},
-            {0b011, "sltiu"},
-            {0b100, "xori"},
-            {0b101, Funct7Map{{0b0000000, "srli"}, {0b0100000, "srai"}}},
-            {0b110, "ori"},
-            {0b111, "andi"}
-        }
-    },
-    {
-        OPCODE_AUIPC, 
-        {
-            {NO_FUNCT3, "auipc"}
-        }
-    },
-    {
-        OPCODE_S_TYPE, 
-        {
-            {0b000, "sb"},
-            {0b001, "sh"},
-            {0b010, "sw"}
-        }
-    },
-    {
-        OPCODE_S_TYPE_FP, 
-        {
-            {0b010, "fsw"}
-        }
-    },
-    {
-        OPCODE_R_TYPE, 
-        {
-            {0b000, Funct7Map{{0b0000000, "add"}, {0b0100000, "sub"}, {0b0000001, "mul"}}},
-            {0b001, Funct7Map{{0b0000000, "sll"}, {0b0000001, "mulh"}}},
-            {0b010, Funct7Map{{0b0000000, "slt"}, {0b0000001, "mulhsu"}}},
-            {0b011, Funct7Map{{0b0000000, "sltu"}, {0b0000001, "mulhu"}}},
-            {0b100, Funct7Map{{0b0000000, "xor"}, {0b0000001, "div"}}},
-            {0b101, Funct7Map{{0b0000000, "srl"}, {0b0100000, "sra"}, {0b0000001, "divu"}}},
-            {0b110, Funct7Map{{0b0000000, "or"}, {0b0000001, "rem"}}},
-            {0b111, Funct7Map{{0b0000000, "and"}, {0b0000001, "remu"}}}
-        }
-    },
-    {
-        OPCODE_LUI, 
-        {
-            {NO_FUNCT3, "lui"}
-        }
-    },
-    {
-        OPCODE_SB_TYPE, 
-        {
-            {0b000, "beq"},
-            {0b001, "bne"},
-            {0b100, "blt"},
-            {0b101, "bge"},
-            {0b110, "bltu"},
-            {0b111, "bgeu"}
-        }
-    },
-    {
-        OPCODE_JALR, 
-        {
-            {0b000, "jalr"}
-        }
-    },
-    {
-        OPCODE_JAL,
-        {
-            {NO_FUNCT3, "jal"}
-        }
-    }
-};
+extern InstructionMap InstructionMapping;
 
 // Define control signals
 struct ControlSignals
@@ -137,25 +72,12 @@ struct InstructionVariables
 };
 
 // Control signals mapping
-std::unordered_map<uint8_t, ControlSignals> ControlInstructions = 
-{
-    {OPCODE_LOAD, {true, true, false, true, true, false, false, false, false}},
-    {OPCODE_LOAD_FP, {true, true, false, true, true, false, false, false, false}},
-    {OPCODE_I_TYPE, {true, false, false, false, true, false, false, false, false}},
-    {OPCODE_AUIPC, {true, false, false, false, true, false, false, false, false}},
-    {OPCODE_S_TYPE, {false, false, true, false, true, false, false, false, false}},
-    {OPCODE_S_TYPE_FP, {false, false, true, false, true, false, false, false, false}},
-    {OPCODE_R_TYPE, {true, false, false, false, false, false, false, false, false}},
-    {OPCODE_LUI, {true, false, false, false, true, false, false, false, false}},
-    {OPCODE_SB_TYPE, {false, false, false, false, false, true, false, false, false}},
-    {OPCODE_JALR, {true, false, false, false, true, false, true, true, false}},
-    {OPCODE_JAL, {true, false, false, false, true, false, true, false, false}}
-};
+extern std::unordered_map<uint8_t, ControlSignals> ControlInstructions;
 
 // Simulator class
-class Simulator {
+class Decoder {
 public:
-    Simulator();
+    Decoder();
 
     // Decode instruction based on opcode
     void decodeInstruction(uint32_t instruction);

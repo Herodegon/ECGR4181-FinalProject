@@ -7,9 +7,9 @@
             "command": "g++",
             "args": [
                 "-g",
-                "${workspaceFolder}/Jock_Assignment4.cpp",
+                "${workspaceFolder}/NewSim.cpp",
                 "-o",
-                "${workspaceFolder}/Jock_Assignment4"
+                "${workspaceFolder}/NewSim"
             ],
             "group": {
                 "kind": "build",
