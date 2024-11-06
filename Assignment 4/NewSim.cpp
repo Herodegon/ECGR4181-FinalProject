@@ -50,25 +50,25 @@ private:
     bool halt;
     int stall_count;
     std::unordered_map<uint32_t, std::string> instruction_map = {
-        {0x00000100, "UNKNOWN_0x00000100"},
-        {0x00000400, "LOAD_BASE_A"},
-        {0x00000517, "auipc a0, 0x0"},
-        {0x00000597, "auipc a1, 0x0"},
-        {0x00000617, "auipc a2, 0x0"},
-        {0x00000800, "LOAD_BASE_B"},
-        {0x00000C00, "LOAD_BASE_C"},
-        {0x00050513, "addi a0, a0, 5"},
-        {0x00058593, "addi a1, a1, 5"},
-        {0x00060613, "addi a2, a2, 6"},
-        {0x05110026, "jalr t0, 0x51"},
-        {0x06110591, "slli t1, t1, 1"},
-        {0x07134681, "lw t0, 0(t1)"},
-        {0x200700E6, "beq a4, a0, 0xE6"},
-        {0x20270010, "bne a4, a0, 0x10"},
-        {0x71530005, "sw a1, 5(t1)"},
-        {0xA0870005, "lw a5, 5(a0)"},
-        {0xB7C50685, "jal t0, 0x6"},
-        {0xDF631000, "ecall"}
+        {0x1 << 0, "UNKNOWN_0x00000100"},
+        {0x01 << 4, "LOAD_BASE_A"},
+        {0x01 << 8, "auipc a0, 0x0"},
+        {0x01 << 12, "auipc a1, 0x0"},
+        {0x01 << 16, "auipc a2, 0x0"},
+        {0x01 << 20, "LOAD_BASE_B"},
+        {0x01 << 24, "LOAD_BASE_C"},
+        {0x01 << 28, "addi a0, a0, 5"},
+        {0x01 << 32, "addi a1, a1, 5"},
+        {0x01 << 36, "addi a2, a2, 6"},
+        {0x01 << 40, "jalr t0, 0x51"},
+        {0x01 << 44, "slli t1, t1, 1"},
+        {0x01 << 48, "lw t0, 0(t1)"},
+        {0x01 << 52, "beq a4, a0, 0xE6"},
+        {0x01 << 56, "bne a4, a0, 0x10"},
+        {0x01 << 60, "sw a1, 5(t1)"},
+        {0x01 << 64, "lw a5, 5(a0)"},
+        {0x01 << 68, "jal t0, 0x6"},
+        {0x01 << 72, "ecall"}
     };
 
 public:
