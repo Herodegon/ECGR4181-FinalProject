@@ -85,35 +85,32 @@ public:
         registers["x13"] = 0; // Loop counter i
     }
 
-    void load_instructions_from_binary(const std::string& filename) {
-        std::ifstream infile(filename, std::ios::binary);
-        if (!infile.is_open()) {
-            throw std::runtime_error("Could not open binary file: " + filename);
-        }
-
-        std::set<std::string> instruction_set;
-
-        while (infile.peek() != std::ifstream::traits_type::eof()) {
-            uint32_t instruction;
-            infile.read(reinterpret_cast<char*>(&instruction), sizeof(instruction));
-
-            if (!infile) {
-                if (infile.eof()) {
-                    std::cerr << "Reached end of file while reading." << std::endl;
-                    break;
-                }
-                throw std::runtime_error("Error reading from binary file: " + filename);
-            }
-
-            // Convert instruction to hex string
-            std::string hex_value = to_hex_string(instruction);
-            if (instruction_set.insert(hex_value).second) {
-                instructions.push_back(new Instruction(hex_value, {}, "Binary"));
-            }
-        }
-
-        infile.close();
+   void load_instructions_from_binary(const std::string& filename) {
+    std::ifstream infile(filename, std::ios::binary);
+    if (!infile.is_open()) {
+        throw std::runtime_error("Could not open binary file: " + filename);
     }
+
+    // Read instructions from the binary file and store them directly.
+    while (infile.peek() != std::ifstream::traits_type::eof()) {
+        uint32_t instruction;
+        infile.read(reinterpret_cast<char*>(&instruction), sizeof(instruction));
+
+        if (!infile) {
+            if (infile.eof()) {
+                std::cerr << "Reached end of file while reading." << std::endl;
+                break;
+            }
+            throw std::runtime_error("Error reading from binary file: " + filename);
+        }
+
+        // Convert instruction to hex string and store it in the instructions vector.
+        std::string hex_value = to_hex_string(instruction);
+        instructions.push_back(new Instruction(hex_value, {}, "Binary"));
+    }
+
+    infile.close();
+}
 
     void fetch() {
         if (stall_count > 0) {

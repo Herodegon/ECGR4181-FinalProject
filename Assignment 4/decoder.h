@@ -1,5 +1,5 @@
-#ifndef SIMULATOR_H
-#define SIMULATOR_H
+#ifndef DECODER_H
+#define DECODER_H
 
 #include <iostream>
 #include <vector>
@@ -93,4 +93,4 @@ private:
     void printControlSignals(const ControlSignals& signals);
 };
 
-#endif // SIMULATOR_H
+#endif // DECODER_H
