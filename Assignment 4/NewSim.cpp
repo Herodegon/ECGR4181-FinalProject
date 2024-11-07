@@ -52,27 +52,6 @@ private:
     std::map<int, double> memory;
     bool halt;
     int stall_count;
-    std::unordered_map<uint32_t, std::string> instruction_map = {
-        {0x01 << 0, "UNKNOWN_0x00000100"},
-        {0x01 << 4, "LOAD_BASE_A"},
-        {0x01 << 8, "auipc a0, 0x0"},
-        {0x01 << 12, "auipc a1, 0x0"},
-        {0x01 << 16, "auipc a2, 0x0"},
-        {0x01 << 20, "LOAD_BASE_B"},
-        {0x01 << 24, "LOAD_BASE_C"},
-        {0x01 << 28, "addi a0, a0, 5"},
-        {0x01 << 32, "addi a1, a1, 5"},
-        {0x01 << 36, "addi a2, a2, 6"},
-        {0x01 << 40, "jalr t0, 0x51"},
-        {0x01 << 44, "slli t1, t1, 1"},
-        {0x01 << 48, "lw t0, 0(t1)"},
-        {0x01 << 52, "beq a4, a0, 0xE6"},
-        {0x01 << 56, "bne a4, a0, 0x10"},
-        {0x01 << 60, "sw a1, 5(t1)"},
-        {0x01 << 64, "lw a5, 5(a0)"},
-        {0x01 << 68, "jal t0, 0x6"},
-        {0x01 << 72, "ecall"}
-    };
 
 public:
     Decoder decoder;
@@ -89,30 +68,22 @@ public:
         registers["x13"] = 0; // Loop counter i
     }
 
-   std::string to_hex_string(uint32_t value) {
-    std::stringstream ss;
-    ss << std::hex << std::setw(8) << std::setfill('0') << value;
-    return ss.str();
-}
+    // Helper function to reverse the bits of a 32-bit integer
+    // uint32_t reverse_bits(uint32_t value) {
+    //     uint32_t reversed = 0;
+    //     for (int i = 0; i < 32; ++i) {
+    //         reversed |= ((value >> i) & 1) << (31 - i);
+    //     }
+    //     return reversed;
+    // }
 
-// Helper function to convert endianess
-uint32_t swap_endian(uint32_t value) {
-    return ((value >> 24) & 0x000000FF) |
-           ((value >> 8)  & 0x0000FF00) |
-           ((value << 8)  & 0x00FF0000) |
-           ((value << 24) & 0xFF000000);
-}
-
-void load_instructions_from_binary(const std::string& filename) {
+   void load_instructions_from_binary(const std::string& filename) {
     std::ifstream infile(filename, std::ios::binary);
     if (!infile.is_open()) {
         throw std::runtime_error("Could not open binary file: " + filename);
     }
 
-    // Vector to store instructions
-    std::vector<Instruction*> instructions;
-
-    // Read instructions from the binary file and store them directly
+    // Read instructions from the binary file and store them directly.
     while (infile.peek() != std::ifstream::traits_type::eof()) {
         uint32_t instruction;
         infile.read(reinterpret_cast<char*>(&instruction), sizeof(instruction));
@@ -125,10 +96,7 @@ void load_instructions_from_binary(const std::string& filename) {
             throw std::runtime_error("Error reading from binary file: " + filename);
         }
 
-        // Adjust endianness (if required)
-        instruction = swap_endian(instruction);
-
-        // Convert instruction to hex string and store it in the instructions vector
+        // Convert instruction to hex string and store it in the instructions vector.
         std::string hex_value = to_hex_string(instruction);
         instructions.push_back(new Instruction(hex_value, instruction, {}, "Binary"));
     }
@@ -163,33 +131,49 @@ void load_instructions_from_binary(const std::string& filename) {
         return oss.str();
     }
 
+    // In Sim.cpp
     void decode() {
         if (pipeline_registers["Fetch"] != nullptr) {
             Instruction* fetched_instr = pipeline_registers["Fetch"];
-            uint32_t instruction_name = std::stoul(fetched_instr->name, nullptr, 0);
             uint32_t instruction_value = fetched_instr->binary;
-
-            int x;
-            decoder.decodeInstruction(instruction_value);
-
-            std::cout << "AIFGUI:ATFULSDGFIASFGULAUFGIAGFAUFHAFGAWIF" << std::endl;
-            std::cout << fetched_instr->name << std::endl;
-            std::cout << std::bitset<32>(fetched_instr->binary) << std::endl;
-            std::cin >> x;
-
-            auto it = instruction_map.find(instruction_name);
-            if (it != instruction_map.end()) {
-                std::cout << "Cycle " << clock_cycle << ": Decoding instruction: " << it->second << std::endl;
-                execute_instruction(fetched_instr);
-            } else {
-                std::cout << "Cycle " << clock_cycle << ": Instruction " << fetched_instr->name << " is not recognized." << std::endl;
+            
+            // Capture the decoded instruction name
+            std::string decodedName = decoder.decodeInstruction(instruction_value);
+            
+            // Split the decoded instruction into the operation and operands
+            std::vector<std::string> operands = split_instruction(decodedName);
+            
+            // Update operands in the Instruction object
+            fetched_instr->operands = operands;
+            
+            std::cout << "Operands: ";
+            for (const auto& operand : operands) {
+                std::cout << operand << " ";
             }
+            std::cout << std::endl;
 
             pipeline_registers["Decode"] = fetched_instr;
             pipeline_registers["Fetch"] = nullptr;
         } else {
             std::cout << "Cycle " << clock_cycle << ": No instruction to decode." << std::endl;
         }
+    }
+
+    // Helper function to split the decoded instruction into operands
+    std::vector<std::string> split_instruction(const std::string& instruction) {
+        std::vector<std::string> operands;
+        std::istringstream iss(instruction);
+        std::string token;
+        
+        // Split by commas, and also remove any extra spaces or commas
+        while (std::getline(iss, token, ',')) {
+            // Remove leading and trailing spaces from each token
+            token.erase(0, token.find_first_not_of(" \t")); // Trim leading spaces
+            token.erase(token.find_last_not_of(" \t") + 1); // Trim trailing spaces
+            operands.push_back(token);
+        }
+
+        return operands;
     }
 
     void execute() {
@@ -244,31 +228,41 @@ void load_instructions_from_binary(const std::string& filename) {
             return;
         }
 
-        std::string name = instr->name;
+        std::vector<std::string>& operands = instr->operands;  // Get operands from instruction
+
+        // Ensure the instruction has at least one operand (the name)
+        if (operands.empty()) {
+            std::cout << "Invalid instruction, no operands provided." << std::endl;
+            return;
+        }
+
+        std::string name = operands[0];  // The first operand is the instruction name
 
         if (name == "la") {
-            // Load address into the register (hardcoded addresses for simplicity)
-            if (instr->operands[0] == "x10") {
-                registers["x10"] = 0x0400; // Address for ARRAY_A
-                std::cout << "Loaded address 0x0400 into x10." << std::endl;
-            } else if (instr->operands[0] == "x11") {
-                registers["x11"] = 0x0800; // Address for ARRAY_B
-                std::cout << "Loaded address 0x0800 into x11." << std::endl;
-            } else if (instr->operands[0] == "x12") {
-                registers["x12"] = 0x0C00; // Address for ARRAY_C
-                std::cout << "Loaded address 0x0C00 into x12." << std::endl;
+            // Load address into the register
+            if (operands.size() >= 2) {
+                if (operands[1] == "x10") {
+                    registers["x10"] = 0x0400; // Address for ARRAY_A
+                    std::cout << "Loaded address 0x0400 into x10." << std::endl;
+                } else if (operands[1] == "x11") {
+                    registers["x11"] = 0x0800; // Address for ARRAY_B
+                    std::cout << "Loaded address 0x0800 into x11." << std::endl;
+                } else if (operands[1] == "x12") {
+                    registers["x12"] = 0x0C00; // Address for ARRAY_C
+                    std::cout << "Loaded address 0x0C00 into x12." << std::endl;
+                }
             }
         } else if (name == "li") {
             // Load immediate value into the register
-            if (instr->operands.size() >= 2) {
-                registers[instr->operands[0]] = std::stoi(instr->operands[1]);
-                std::cout << "Loaded immediate " << instr->operands[1] << " into " << instr->operands[0] << "." << std::endl;
+            if (operands.size() >= 3) {
+                registers[operands[1]] = std::stoi(operands[2]);
+                std::cout << "Loaded immediate " << operands[2] << " into " << operands[1] << "." << std::endl;
             }
         } else if (name == "flw") {
             // Load floating point word from memory into floating-point register
-            if (instr->operands.size() >= 2) {
-                std::string f_reg = instr->operands[0]; // e.g., "f0"
-                std::string addr_reg = instr->operands[1]; // e.g., "0(x10)"
+            if (operands.size() >= 3) {
+                std::string f_reg = operands[1]; // e.g., "f0"
+                std::string addr_reg = operands[2]; // e.g., "0(x10)"
                 
                 // Extract base register (assuming format like "0(x10)")
                 int base_addr = registers[addr_reg.substr(3, 3)]; // Extract register (e.g., x10)
@@ -280,10 +274,10 @@ void load_instructions_from_binary(const std::string& filename) {
             }
         } else if (name == "fadd.s") {
             // Floating point addition
-            if (instr->operands.size() >= 3) {
-                std::string dest_reg = instr->operands[0]; // Destination register
-                std::string src_reg1 = instr->operands[1]; // First source register
-                std::string src_reg2 = instr->operands[2]; // Second source register
+            if (operands.size() >= 4) {
+                std::string dest_reg = operands[1]; // Destination register
+                std::string src_reg1 = operands[2]; // First source register
+                std::string src_reg2 = operands[3]; // Second source register
 
                 f_registers[dest_reg] = f_registers[src_reg1] + f_registers[src_reg2];
                 std::cout << "Added " << f_registers[src_reg1] << " and " << f_registers[src_reg2] 
@@ -291,9 +285,9 @@ void load_instructions_from_binary(const std::string& filename) {
             }
         } else if (name == "fsw") {
             // Store floating point word from register into memory
-            if (instr->operands.size() >= 2) {
-                std::string f_reg = instr->operands[0]; // e.g., "f2"
-                std::string addr_reg = instr->operands[1]; // e.g., "0(x12)"
+            if (operands.size() >= 3) {
+                std::string f_reg = operands[1]; // e.g., "f2"
+                std::string addr_reg = operands[2]; // e.g., "0(x12)"
 
                 int base_addr = registers[addr_reg.substr(3, 3)];
                 int offset = std::stoi(addr_reg.substr(0, addr_reg.find('(')));
@@ -304,27 +298,27 @@ void load_instructions_from_binary(const std::string& filename) {
             }
         } else if (name == "auipc") {
             // Add Upper Immediate to PC
-            if (instr->operands.size() >= 2) {
-                std::string reg = instr->operands[0];
-                int immediate = std::stoi(instr->operands[1], nullptr, 16); // Convert hex string to integer
+            if (operands.size() >= 3) {
+                std::string reg = operands[1];
+                int immediate = std::stoi(operands[2], nullptr, 16); // Convert hex string to integer
                 registers[reg] = pc + (immediate << 12); // Shift left by 12 bits
                 std::cout << "AUIPC: Loaded " << registers[reg] << " into " << reg << " with immediate " << immediate << "." << std::endl;
             }
         } else if (name == "addi") {
             // Add Immediate
-            if (instr->operands.size() >= 3) {
-                std::string dest_reg = instr->operands[0];
-                std::string src_reg = instr->operands[1];
-                int immediate = std::stoi(instr->operands[2]);
+            if (operands.size() >= 4) {
+                std::string dest_reg = operands[1];
+                std::string src_reg = operands[2];
+                int immediate = std::stoi(operands[3]);
 
                 registers[dest_reg] = registers[src_reg] + immediate;
                 std::cout << "ADDI: Added " << immediate << " to " << src_reg << ", result in " << dest_reg << ": " << registers[dest_reg] << "." << std::endl;
             }
         } else if (name == "jalr") {
             // Jump and Link Register
-            if (instr->operands.size() >= 2) {
-                std::string dest_reg = instr->operands[0];
-                int offset = std::stoi(instr->operands[1]);
+            if (operands.size() >= 3) {
+                std::string dest_reg = operands[1];
+                int offset = std::stoi(operands[2]);
 
                 pc += offset; // Jump to the address
                 registers[dest_reg] = pc; // Save return address
@@ -332,19 +326,19 @@ void load_instructions_from_binary(const std::string& filename) {
             }
         } else if (name == "slli") {
             // Shift Left Logical Immediate
-            if (instr->operands.size() >= 3) {
-                std::string dest_reg = instr->operands[0];
-                std::string src_reg = instr->operands[1];
-                int shift_amount = std::stoi(instr->operands[2]);
+            if (operands.size() >= 4) {
+                std::string dest_reg = operands[1];
+                std::string src_reg = operands[2];
+                int shift_amount = std::stoi(operands[3]);
 
                 registers[dest_reg] = registers[src_reg] << shift_amount;
                 std::cout << "SLLI: Shifted " << src_reg << " left by " << shift_amount << ", result in " << dest_reg << ": " << registers[dest_reg] << "." << std::endl;
             }
         } else if (name == "lw") {
             // Load Word
-            if (instr->operands.size() >= 2) {
-                std::string dest_reg = instr->operands[0];
-                std::string addr_reg = instr->operands[1];
+            if (operands.size() >= 3) {
+                std::string dest_reg = operands[1];
+                std::string addr_reg = operands[2];
 
                 int base_addr = registers[addr_reg.substr(3, 3)]; // Extract base register
                 int offset = std::stoi(addr_reg.substr(0, addr_reg.find('('))); // Extract offset
@@ -354,9 +348,9 @@ void load_instructions_from_binary(const std::string& filename) {
             }
         } else if (name == "sw") {
             // Store Word
-            if (instr->operands.size() >= 2) {
-                std::string src_reg = instr->operands[0];
-                std::string addr_reg = instr->operands[1];
+            if (operands.size() >= 3) {
+                std::string src_reg = operands[1];
+                std::string addr_reg = operands[2];
 
                 int base_addr = registers[addr_reg.substr(3, 3)];
                 int offset = std::stoi(addr_reg.substr(0, addr_reg.find('(')));
@@ -366,10 +360,10 @@ void load_instructions_from_binary(const std::string& filename) {
             }
         } else if (name == "beq") {
             // Branch if Equal
-            if (instr->operands.size() >= 3) {
-                std::string reg1 = instr->operands[0];
-                std::string reg2 = instr->operands[1];
-                int offset = std::stoi(instr->operands[2]);
+            if (operands.size() >= 4) {
+                std::string reg1 = operands[1];
+                std::string reg2 = operands[2];
+                int offset = std::stoi(operands[3]);
 
                 if (registers[reg1] == registers[reg2]) {
                     pc += offset; // Branch taken
@@ -380,10 +374,10 @@ void load_instructions_from_binary(const std::string& filename) {
             }
         } else if (name == "bne") {
             // Branch if Not Equal
-            if (instr->operands.size() >= 3) {
-                std::string reg1 = instr->operands[0];
-                std::string reg2 = instr->operands[1];
-                int offset = std::stoi(instr->operands[2]);
+            if (operands.size() >= 4) {
+                std::string reg1 = operands[1];
+                std::string reg2 = operands[2];
+                int offset = std::stoi(operands[3]);
 
                 if (registers[reg1] != registers[reg2]) {
                     pc += offset; // Branch taken
@@ -392,38 +386,11 @@ void load_instructions_from_binary(const std::string& filename) {
                     std::cout << "BNE: No branch taken." << std::endl;
                 }
             }
-        } else if (name == "blt") {
-            // Branch if Less Than
-            if (instr->operands.size() >= 3) {
-                std::string reg1 = instr->operands[0];
-                std::string reg2 = instr->operands[1];
-                int offset = std::stoi(instr->operands[2]);
-
-                if (registers[reg1] < registers[reg2]) {
-                    pc += offset; // Branch taken
-                    std::cout << "BLT: Branch taken to " << pc << "." << std::endl;
-                } else {
-                    std::cout << "BLT: No branch taken." << std::endl;
-                }
-            }
-        } else if (name == "bge") {
-            // Branch if Greater or Equal
-            if (instr->operands.size() >= 3) {
-                std::string reg1 = instr->operands[0];
-                std::string reg2 = instr->operands[1];
-                int offset = std::stoi(instr->operands[2]);
-
-                if (registers[reg1] >= registers[reg2]) {
-                    pc += offset; // Branch taken
-                    std::cout << "BGE: Branch taken to " << pc << "." << std::endl;
-                } else {
-                    std::cout << "BGE: No branch taken." << std::endl;
-                }
-            }
         } else {
-            std::cout << "Instruction not recognized: " << name << std::endl;
+            std::cout << "Unsupported instruction: " << name << std::endl;
         }
     }
+
     void flush_pipeline()
         {
             for (auto& stage : pipeline_stages)

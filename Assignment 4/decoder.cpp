@@ -9,7 +9,8 @@ InstructionMap InstructionMapping =
             {0b001, "lh"},
             {0b010, "lw"},
             {0b100, "lbu"},
-            {0b101, "lhu"}
+            {0b101, "lhu"},
+            {0b110, "flw"}
         }
     },
     {
@@ -48,7 +49,11 @@ InstructionMap InstructionMapping =
     {
         OPCODE_R_TYPE, 
         {
-            {0b000, Funct7Map{{0b0000000, "add"}, {0b0100000, "sub"}, {0b0000001, "mul"}}},
+            {0b000, Funct7Map{
+                {0b0000000, "add"}, 
+                {0b0100000, "sub"}, 
+                {0b0000001, "mul"},
+                {0b0000000, "fadd.s"}}},  // Adding fadd.s to the R-type mapping
             {0b001, Funct7Map{{0b0000000, "sll"}, {0b0000001, "mulh"}}},
             {0b010, Funct7Map{{0b0000000, "slt"}, {0b0000001, "mulhsu"}}},
             {0b011, Funct7Map{{0b0000000, "sltu"}, {0b0000001, "mulhu"}}},
@@ -89,6 +94,7 @@ InstructionMap InstructionMapping =
     }
 };
 
+
 // Control signals mapping
 std::unordered_map<uint8_t, ControlSignals> ControlInstructions = 
 {
@@ -109,16 +115,13 @@ std::unordered_map<uint8_t, ControlSignals> ControlInstructions =
 Decoder::Decoder() {}
 
 // Decode instruction based on opcode
-void Decoder::decodeInstruction(uint32_t instruction) {
+std::string Decoder::decodeInstruction(uint32_t instruction) {
     uint8_t opcode = getOpcode(instruction);
-    // std::cout << std::bitset<32>(instruction) << std::endl;
-    // std::cout << std::bitset<7>(opcode) << std::endl;
-    // int x;
-    // std::cin >> x;
     ControlSignals signals = ControlInstructions[opcode];
     InstructionVariables vars;
     std::vector<std::string> printStatement;
 
+    // Determine the format and fill in `vars` based on opcode
     InstructionFormat format;
 
     switch(opcode) {
@@ -167,29 +170,34 @@ void Decoder::decodeInstruction(uint32_t instruction) {
             break;
         default:
             std::cout << "Unknown opcode: " << std::bitset<7>(opcode) << std::endl;
-            return;
+            return "Unknown";
     }
 
     std::variant<std::string, Funct7Map> instructionType = InstructionMapping[opcode][vars.funct3];
+    std::string decodedInstructionName;
+
     if (instructionType.index() == 0) {
-        std::string tempStr = std::get<std::string>(instructionType);
-        printStatement.push_back(tempStr);
+        decodedInstructionName = std::get<std::string>(instructionType);
     } else {
         Funct7Map funct7Map = std::get<Funct7Map>(instructionType);
-        std::string tempStr = funct7Map[vars.funct7];
-        printStatement.push_back(tempStr);
+        decodedInstructionName = funct7Map[vars.funct7];
     }
 
     addRegisters(vars, printStatement, opcode);
     printControlSignals(signals);
 
+    // Build the full decoded instruction as a string
+    std::string fullDecodedInstruction;
     for (size_t i = 0; i < printStatement.size(); ++i) {
-        std::cout << printStatement[i];
+        fullDecodedInstruction += printStatement[i];
         if (i != printStatement.size() - 1) {
-            std::cout << " ";
+            fullDecodedInstruction += " ";  // Add space between each part of the instruction
         }
     }
-    std::cout << std::endl;
+
+    decodedInstructionName += " " + fullDecodedInstruction; // Append full decoded instruction to the name
+
+    return decodedInstructionName;
 }
 
 // Helper functions for extracting instruction fields

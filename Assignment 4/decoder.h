@@ -79,9 +79,7 @@ extern std::unordered_map<uint8_t, ControlSignals> ControlInstructions;
 class Decoder {
 public:
     Decoder();
-
-    // Decode instruction based on opcode
-    void decodeInstruction(uint32_t instruction);
+    std::string decodeInstruction(uint32_t instruction);  // Changed to return std::string\
 
 private:
     // Getters for instruction fields
