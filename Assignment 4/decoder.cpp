@@ -52,15 +52,14 @@ InstructionMap InstructionMapping =
             {0b000, Funct7Map{
                 {0b0000000, "add"}, 
                 {0b0100000, "sub"}, 
-                {0b0000001, "mul"},
-                {0b0000000, "fadd.s"}}},  // Adding fadd.s to the R-type mapping
+                {0b0000001, "mul"},}},  // Adding fadd.s to the R-type mapping
             {0b001, Funct7Map{{0b0000000, "sll"}, {0b0000001, "mulh"}}},
             {0b010, Funct7Map{{0b0000000, "slt"}, {0b0000001, "mulhsu"}}},
             {0b011, Funct7Map{{0b0000000, "sltu"}, {0b0000001, "mulhu"}}},
             {0b100, Funct7Map{{0b0000000, "xor"}, {0b0000001, "div"}}},
             {0b101, Funct7Map{{0b0000000, "srl"}, {0b0100000, "sra"}, {0b0000001, "divu"}}},
             {0b110, Funct7Map{{0b0000000, "or"}, {0b0000001, "rem"}}},
-            {0b111, Funct7Map{{0b0000000, "and"}, {0b0000001, "remu"}}}
+            {0b111, Funct7Map{{0b0000000, "fadd.s"}, {0b0000001, "remu"}}},
         }
     },
     {
@@ -162,6 +161,7 @@ std::string Decoder::decodeInstruction(uint32_t instruction) {
             vars.rd = getRD(instruction);
             vars.funct3 = getFunct3(instruction);
             vars.funct7 = getFunct7(instruction);
+
             break;
         case OPCODE_JAL:
             format = FORMAT_J;
@@ -181,6 +181,12 @@ std::string Decoder::decodeInstruction(uint32_t instruction) {
     } else {
         Funct7Map funct7Map = std::get<Funct7Map>(instructionType);
         decodedInstructionName = funct7Map[vars.funct7];
+    }
+    if (opcode == OPCODE_R_TYPE){
+        std::cout << decodedInstructionName << std::endl;
+        std::cout << "ASKJFGUIAOGUIASUGFLJAGFKAGFA" << std::endl;
+            int x;
+            std::cin >> x;
     }
 
     addRegisters(vars, printStatement, opcode);

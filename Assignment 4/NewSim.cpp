@@ -68,15 +68,6 @@ public:
         registers["x13"] = 0; // Loop counter i
     }
 
-    // Helper function to reverse the bits of a 32-bit integer
-    // uint32_t reverse_bits(uint32_t value) {
-    //     uint32_t reversed = 0;
-    //     for (int i = 0; i < 32; ++i) {
-    //         reversed |= ((value >> i) & 1) << (31 - i);
-    //     }
-    //     return reversed;
-    // }
-
    void load_instructions_from_binary(const std::string& filename) {
     std::ifstream infile(filename, std::ios::binary);
     if (!infile.is_open()) {
@@ -161,20 +152,30 @@ public:
 
     // Helper function to split the decoded instruction into operands
     std::vector<std::string> split_instruction(const std::string& instruction) {
-        std::vector<std::string> operands;
-        std::istringstream iss(instruction);
-        std::string token;
-        
-        // Split by commas, and also remove any extra spaces or commas
-        while (std::getline(iss, token, ',')) {
-            // Remove leading and trailing spaces from each token
-            token.erase(0, token.find_first_not_of(" \t")); // Trim leading spaces
-            token.erase(token.find_last_not_of(" \t") + 1); // Trim trailing spaces
-            operands.push_back(token);
-        }
+    std::vector<std::string> operands;
+    std::istringstream iss(instruction);
+    std::string token;
 
-        return operands;
+    // Split the instruction by the first space (this should capture the operation)
+    if (std::getline(iss, token, ' ')) {
+        operands.push_back(token); // Store the operation (e.g., "addi")
     }
+
+    // Now handle the rest of the instruction (which are operands)
+    std::string remaining;
+    if (std::getline(iss, remaining)) {
+        std::istringstream operand_stream(remaining);
+        while (std::getline(operand_stream, token, ',')) {
+            // Remove leading and trailing spaces
+            token.erase(0, token.find_first_not_of(" \t"));
+            token.erase(token.find_last_not_of(" \t") + 1);
+            operands.push_back(token); // Store each operand
+        }
+    }
+
+    return operands;
+}
+
 
     void execute() {
         if (stall_count > 0) {
