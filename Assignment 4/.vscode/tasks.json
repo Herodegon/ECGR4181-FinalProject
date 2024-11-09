@@ -7,9 +7,12 @@
             "command": "g++",
             "args": [
                 "-g",
-                "${workspaceFolder}/NewSim.cpp",
+                "${workspaceFolder}/main.cpp",
+                "./components/decoder.cpp",
+                "./components/ram.cpp",
+                "./components/simulator.cpp",
                 "-o",
-                "${workspaceFolder}/NewSim"
+                "${workspaceFolder}/main.exe"
             ],
             "group": {
                 "kind": "build",

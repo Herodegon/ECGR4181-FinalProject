@@ -10,22 +10,20 @@ RAM::RAM() {
 }
 
 // Read a 32-bit word from RAM with simulated latency
-uint32_t RAM::read(uint32_t address, int& tickCounter) {
+uint32_t RAM::read(uint32_t address) {
     if (address + 4 > RAM_SIZE) {
         throw std::out_of_range("RAM read out of bounds.");
     }
-    tickCounter += READ_LATENCY;  // Simulate read latency
     uint32_t value;
     std::memcpy(&value, &memory[address], sizeof(value));
     return value;
 }
 
 // Write a 32-bit word to RAM with simulated latency
-void RAM::write(uint32_t address, uint32_t value, int& tickCounter) {
+void RAM::write(uint32_t address, uint32_t value) {
     if (address + 4 > RAM_SIZE) {
         throw std::out_of_range("RAM write out of bounds.");
     }
-    tickCounter += WRITE_LATENCY;  // Simulate write latency
     std::memcpy(&memory[address], &value, sizeof(value));
 }
 

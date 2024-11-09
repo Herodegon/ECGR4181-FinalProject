@@ -52,14 +52,16 @@ InstructionMap InstructionMapping =
             {0b000, Funct7Map{
                 {0b0000000, "add"}, 
                 {0b0100000, "sub"}, 
-                {0b0000001, "mul"},}},  // Adding fadd.s to the R-type mapping
+                {0b0000001, "mul"},
+                }
+            },  // Adding fadd.s to the R-type mapping
             {0b001, Funct7Map{{0b0000000, "sll"}, {0b0000001, "mulh"}}},
             {0b010, Funct7Map{{0b0000000, "slt"}, {0b0000001, "mulhsu"}}},
             {0b011, Funct7Map{{0b0000000, "sltu"}, {0b0000001, "mulhu"}}},
             {0b100, Funct7Map{{0b0000000, "xor"}, {0b0000001, "div"}}},
             {0b101, Funct7Map{{0b0000000, "srl"}, {0b0100000, "sra"}, {0b0000001, "divu"}}},
             {0b110, Funct7Map{{0b0000000, "or"}, {0b0000001, "rem"}}},
-            {0b111, Funct7Map{{0b0000000, "fadd.s"}, {0b0000001, "remu"}}},
+            {0b111, Funct7Map{{0b0000000, "and"}, {0b0000001, "remu"}}},
         }
     },
     {
@@ -90,7 +92,31 @@ InstructionMap InstructionMapping =
         {
             {NO_FUNCT3, "jal"}
         }
+    },
+    {
+        OPTCODE_FP,
+        {
+            {0b000, Funct7Map{
+                {0b0000000, "fadd.s"},
+                {0b0000100, "fsub.s"},
+                {0b0001000, "fmul.s"},
+                {0b0001100, "fdiv.s"},
+                {0b0101100, "fsqrt.s"},
+                // Add other single-precision floating-point operations here
+                }
+            },
+            {0b001, Funct7Map{
+                {0b0000000, "fadd.d"},
+                {0b0000100, "fsub.d"},
+                {0b0001000, "fmul.d"},
+                {0b0001100, "fdiv.d"},
+                {0b0101100, "fsqrt.d"},
+                // Add other double-precision floating-point operations here
+                }
+            },
+        }
     }
+        
 };
 
 
@@ -154,6 +180,7 @@ std::string Decoder::decodeInstruction(uint32_t instruction) {
             vars.funct3 = getFunct3(instruction);
             vars.immediate = getImmediate(instruction);
             break;
+        case OPTCODE_FP:
         case OPCODE_R_TYPE:
             format = FORMAT_R;
             vars.rs1 = getRS1(instruction);
@@ -182,15 +209,9 @@ std::string Decoder::decodeInstruction(uint32_t instruction) {
         Funct7Map funct7Map = std::get<Funct7Map>(instructionType);
         decodedInstructionName = funct7Map[vars.funct7];
     }
-    if (opcode == OPCODE_R_TYPE){
-        std::cout << decodedInstructionName << std::endl;
-        std::cout << "ASKJFGUIAOGUIASUGFLJAGFKAGFA" << std::endl;
-            int x;
-            std::cin >> x;
-    }
 
     addRegisters(vars, printStatement, opcode);
-    printControlSignals(signals);
+    // printControlSignals(signals);
 
     // Build the full decoded instruction as a string
     std::string fullDecodedInstruction;
@@ -275,8 +296,14 @@ int32_t Decoder::getImmediate(uint32_t instruction) {
 void Decoder::printOperands(int op1, int op2, int op3, std::vector<std::string>& printStatement,
                               std::vector<bool> isReg, bool isImmediateLast) {
     std::vector<std::string> operands;
-    if (op1 != NO_REGISTER) operands.push_back((isReg[0] ? "x" : "") + std::to_string(op1));
-    if (op2 != NO_REGISTER && op2 != NO_IMMEDIATE) operands.push_back((isReg[1] ? "x" : "") + std::to_string(op2));
+    if (op1 == 2) 
+        operands.push_back("sp");
+    else if (op1 != NO_REGISTER) 
+        operands.push_back((isReg[0] ? "x" : "") + std::to_string(op1));
+    if (op2 == 2) 
+        operands.push_back("sp");
+    else if (op2 != NO_REGISTER && op2 != NO_IMMEDIATE) 
+        operands.push_back((isReg[1] ? "x" : "") + std::to_string(op2));
     if (op3 != NO_REGISTER && op3 != NO_IMMEDIATE) {
         std::string operand = isImmediateLast ? std::to_string(op3) : (isReg[2] ? "x" : "") + std::to_string(op3);
         operands.push_back(operand);
@@ -331,13 +358,13 @@ void Decoder::addRegisters(InstructionVariables& vars, std::vector<std::string>&
 }
 
 void Decoder::printControlSignals(const ControlSignals& signals) {
-    std::cout << "RegWrite = " << signals.RegWrite << "\n"
-              << "MemRead = " << signals.MemRead << "\n"
-              << "MemWrite = " << signals.MemWrite << "\n"
+    std::cout << "RegWrite = " << signals.RegWrite << " "
+              << "MemRead = " << signals.MemRead << " "
+              << "MemWrite = " << signals.MemWrite << " "
               << "MemToReg = " << signals.MemToReg << "\n"
-              << "ALUSrc = " << signals.ALUSrc << "\n"
-              << "Branch = " << signals.Branch << "\n"
-              << "Jump = " << signals.Jump << "\n"
-              << "JumpReg = " << signals.JumpReg << "\n"
+              << "ALUSrc = " << signals.ALUSrc << " "
+              << "Branch = " << signals.Branch << " "
+              << "Jump = " << signals.Jump << " "
+              << "JumpReg = " << signals.JumpReg << " "
               << "Zero = " << signals.Zero << "\n";
 }

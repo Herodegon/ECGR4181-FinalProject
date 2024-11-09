@@ -14,10 +14,10 @@ public:
     RAM();
 
     // Read a 32-bit word from RAM with simulated latency
-    uint32_t read(uint32_t address, int& tickCounter);
+    uint32_t read(uint32_t address);
 
     // Write a 32-bit word to RAM with simulated latency
-    void write(uint32_t address, uint32_t value, int& tickCounter);
+    void write(uint32_t address, uint32_t value);
 
     // Print memory contents for debugging
     void print(uint32_t start, uint32_t end) const;
