@@ -10,9 +10,9 @@ Simulator::Simulator(int num_runs)
     pipeline_registers["Execute"] = nullptr;
     pipeline_registers["Store"] = nullptr;
     registers["sp"] = 0x3FF;                // Address of end of the stack
-    registers["ra"] = 1;
-    registers["s0"] = 2;
-    registers["a0"] = 3;
+    registers["ra"] = 0;
+    registers["s0"] = 0;
+    registers["a0"] = 0;
     registers["zero"] = 0;
 }
 
@@ -164,7 +164,7 @@ void Simulator::execute_instruction(Instruction* instr) {
             std::cout << "Execute: " << "ADDI: Added " << immediate << " to " << src_reg << ", result in " << dest_reg << ": " << registers[dest_reg] << "." << std::endl;
         }
     } else if (name == "add") {
-        // Add Immediate
+        // Add Registers
         if (operands.size() >= 4) {
             std::string dest_reg = operands[1];
             std::string op0_reg = operands[2];
@@ -189,7 +189,7 @@ void Simulator::execute_instruction(Instruction* instr) {
             int offset = std::stoi(addr_reg_offset.substr(0, start));
 
             int base_addr = registers[addr_reg];
-            uint32_t effective_addr = registers[addr_reg] + offset;
+            uint32_t effective_addr = base_addr + offset;
             uint32_t value = registers[src_reg];
 
             ram.write(effective_addr, value);
@@ -220,7 +220,7 @@ void Simulator::execute_instruction(Instruction* instr) {
         std::string base_reg = operands[2];
         int immediate = std::stoi(operands[3]);
         if (registers[less_reg] < registers[base_reg]){
-            pc = immediate;
+            pc = pc + immediate;
             std::cout << "Execute: " << "BLT: Jumped to " << immediate << registers[less_reg] << " < " << registers[base_reg] << std::endl;
         } else{
             std::cout << "Execute: " << "BLT: Didnt jump to " << immediate << " not " << registers[less_reg] << " < " << registers[base_reg] << std::endl;
@@ -287,9 +287,11 @@ void Simulator::execute_instruction(Instruction* instr) {
             std::cout<< "Execute: " << "FSW: Stored " << registers[f_reg] << " into memory address " << effective_addr << "." << std::endl;
         }
     } else if (name == "jal"){
-        int shift_amount = std::stoi(operands[2]);
-        pc = shift_amount;
-        pipeline_registers["Fetch"] = nullptr;
+        int immediate = std::stoi(operands[2]);
+        registers["ra"] = pc + 4;
+        pc = pc + immediate;
+        if (immediate*immediate > 0)
+            pipeline_registers["Fetch"] = nullptr;
     }
     
     else if (name == "auipc") {

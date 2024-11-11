@@ -264,7 +264,7 @@ int32_t Decoder::getImmediate(uint32_t instruction) {
         case OPCODE_I_TYPE:
         case OPCODE_JALR:
             imm = (instruction >> 20) & 0xFFF;
-            if (imm & 0x800) imm |= 0xFFFFF000;
+            if (imm > 4079 && imm & 0x800) imm |= 0xFFFFF000;
             break;
         case OPCODE_S_TYPE:
             imm = ((instruction >> 25) & 0x7F) << 5 | (instruction >> 7) & 0x1F;

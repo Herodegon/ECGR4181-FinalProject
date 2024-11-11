@@ -45,7 +45,6 @@ const std::vector<std::string> pipeline_stages = {"Fetch", "Decode", "Execute", 
 
 class Simulator {
 private:
-    RAM ram;
     uint32_t max_instruction_address;
     int clock_cycle;
     const int clock_cycle_limit;
@@ -61,6 +60,7 @@ private:
     Decoder decoder;
 
 public:
+    RAM ram;
     Simulator(int num_runs = 0);
     void load_instructions_from_binary(const std::string& filename);
     void fetch();
