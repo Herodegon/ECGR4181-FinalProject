@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <bitset>
 #include <limits>
+#include <unordered_set>
 
 // Define Funct7Map and InstructionMap
 using Funct7Map = std::unordered_map<int, std::string>;
@@ -93,9 +94,9 @@ private:
     int32_t getImmediate(uint32_t instruction);
 
     // Operand and register management
-    void printOperands(int op1, int op2, int op3, std::vector<std::string>& printStatement,
+    void printOperands(int op1, int op2, int op3, std::string din, std::vector<std::string>& printStatement,
                        std::vector<bool> isReg, bool isImmediateLast = false);
-    void addRegisters(InstructionVariables& vars, std::vector<std::string>& printStatement, uint8_t opcode);
+    void addRegisters(InstructionVariables& vars, std::vector<std::string>& printStatement, uint8_t opcode, std::string din);
     
     // Print control signals
     void printControlSignals(const ControlSignals& signals);

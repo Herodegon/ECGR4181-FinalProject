@@ -61,6 +61,7 @@
         "iomanip": "cpp",
         "set": "cpp",
         "sstream": "cpp",
-        "xstddef": "cpp"
+        "xstddef": "cpp",
+        "unordered_set": "cpp"
     }
 }

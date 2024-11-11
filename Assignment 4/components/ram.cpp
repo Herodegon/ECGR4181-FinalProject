@@ -38,9 +38,10 @@ void RAM::print(uint32_t start, uint32_t end) const {
 
 // Initialize specific memory regions as per specifications
 void RAM::initializeMemoryRegions() {
-    // Initialize arrays ARRAY_A (0x400-0x7FF) and ARRAY_B (0x800-0xBFF) with random FP32 values
-    for (uint32_t i = 0x400; i < 0xC00; i += 4) {
-        float randomValue = static_cast<float>(rand()) / RAND_MAX;
-        std::memcpy(&memory[i], &randomValue, sizeof(float));
+    // Initialize memory from 0x400 to 0xBFF with sequential uint32_t values starting from 1
+    uint32_t value = 1;
+    for (uint32_t address = 0x400; address < 0xC00; address += 4) {
+        write(address, value);
+        value += 1;
     }
 }

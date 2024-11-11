@@ -14,6 +14,12 @@ InstructionMap InstructionMapping =
         }
     },
     {
+        OPCODE_LOAD_FP,
+        {
+            {0b010, "flw"},
+        }
+    },
+    {
         OPCODE_I_TYPE, 
         {
             {0b000, "addi"},
@@ -96,22 +102,13 @@ InstructionMap InstructionMapping =
     {
         OPTCODE_FP,
         {
-            {0b000, Funct7Map{
+            {0b111, Funct7Map{
                 {0b0000000, "fadd.s"},
                 {0b0000100, "fsub.s"},
                 {0b0001000, "fmul.s"},
                 {0b0001100, "fdiv.s"},
                 {0b0101100, "fsqrt.s"},
                 // Add other single-precision floating-point operations here
-                }
-            },
-            {0b001, Funct7Map{
-                {0b0000000, "fadd.d"},
-                {0b0000100, "fsub.d"},
-                {0b0001000, "fmul.d"},
-                {0b0001100, "fdiv.d"},
-                {0b0101100, "fsqrt.d"},
-                // Add other double-precision floating-point operations here
                 }
             },
         }
@@ -166,6 +163,7 @@ std::string Decoder::decodeInstruction(uint32_t instruction) {
             vars.rd = getRD(instruction);
             vars.immediate = getImmediate(instruction);
             break;
+        case OPCODE_S_TYPE_FP:
         case OPCODE_S_TYPE:
             format = FORMAT_S;
             vars.rs1 = getRS1(instruction);
@@ -210,7 +208,7 @@ std::string Decoder::decodeInstruction(uint32_t instruction) {
         decodedInstructionName = funct7Map[vars.funct7];
     }
 
-    addRegisters(vars, printStatement, opcode);
+    addRegisters(vars, printStatement, opcode, decodedInstructionName);
     // printControlSignals(signals);
 
     // Build the full decoded instruction as a string
@@ -257,7 +255,12 @@ int32_t Decoder::getImmediate(uint32_t instruction) {
     int32_t imm = 0;
 
     switch(opcode) {
+
         case OPCODE_LOAD:
+            imm = (instruction >> 20) & 0xFFF;
+            if (imm > 4079 && imm & 0x800) imm |= 0xFFFFF000;
+            break;
+        
         case OPCODE_I_TYPE:
         case OPCODE_JALR:
             imm = (instruction >> 20) & 0xFFF;
@@ -276,8 +279,7 @@ int32_t Decoder::getImmediate(uint32_t instruction) {
             break;
         case OPCODE_AUIPC:
         case OPCODE_LUI:
-            imm = instruction >> 12;
-            if (imm & 0x80000) imm |= 0xFFF00000;
+            imm = instruction & 0xFFFFF000;
             break;
         case OPCODE_JAL:
             imm = ((instruction >> 31) & 0x1) << 20 |
@@ -293,19 +295,51 @@ int32_t Decoder::getImmediate(uint32_t instruction) {
     return imm;
 }
 
-void Decoder::printOperands(int op1, int op2, int op3, std::vector<std::string>& printStatement,
-                              std::vector<bool> isReg, bool isImmediateLast) {
+// Helper function to map register numbers to RISC-V register names
+std::string getRegisterName(int regNum, const std::string& instruction) {
+
+    static const std::unordered_set<std::string> floatInstructions = {
+        "flw", "fsw", "fadd.s", "fsub.s", "fmul.s", "fdiv.s", "fsqrt.s",
+        "fsgnj.s", "fsgnjn.s", "fsgnjx.s", "fmin.s", "fmax.s",
+        // Add other floating-point instructions as needed
+    };
+
+    // Check if the instruction is a floating-point type
+    if (floatInstructions.find(instruction) != floatInstructions.end() && regNum < 2) {
+        // Return floating-point register name
+        return "ft" + std::to_string(regNum);
+    }
+
+    if (regNum == 0) return "zero";
+    if (regNum == 1) return "ra";
+    if (regNum == 2) return "sp";
+    if (regNum == 3) return "gp";
+    if (regNum == 4) return "tp";
+
+    // Temporaries: t0-t2 (x5 - x7)
+    if (regNum >= 5 && regNum <= 7) return "t" + std::to_string(regNum - 5);
+    // Saved registers: s0-s1 (x8 - x9)
+    if (regNum >= 8 && regNum <= 9) return "s" + std::to_string(regNum - 8);
+    // Argument registers: a0-a7 (x10 - x17)
+    if (regNum >= 10 && regNum <= 17) return "a" + std::to_string(regNum - 10);
+    // Saved registers: s2-s11 (x18 - x27)
+    if (regNum >= 18 && regNum <= 27) return "s" + std::to_string(regNum - 16);
+    // Temporaries: t3-t6 (x28 - x31)
+    if (regNum >= 28 && regNum <= 31) return "t" + std::to_string(regNum - 25);
+    // Fallback for non-standard registers
+    return "x" + std::to_string(regNum);
+}
+
+void Decoder::printOperands(int op1, int op2, int op3, std::string din, std::vector<std::string>& printStatement,
+                            std::vector<bool> isReg, bool isImmediateLast) {
     std::vector<std::string> operands;
-    if (op1 == 2) 
-        operands.push_back("sp");
-    else if (op1 != NO_REGISTER) 
-        operands.push_back((isReg[0] ? "x" : "") + std::to_string(op1));
-    if (op2 == 2) 
-        operands.push_back("sp");
-    else if (op2 != NO_REGISTER && op2 != NO_IMMEDIATE) 
-        operands.push_back((isReg[1] ? "x" : "") + std::to_string(op2));
+
+    if (op1 != NO_REGISTER) 
+        operands.push_back(isReg[0] ? getRegisterName(op1, din) : std::to_string(op1));
+    if (op2 != NO_REGISTER && op2 != NO_IMMEDIATE) 
+        operands.push_back(isReg[1] ? getRegisterName(op2, din) : std::to_string(op2));
     if (op3 != NO_REGISTER && op3 != NO_IMMEDIATE) {
-        std::string operand = isImmediateLast ? std::to_string(op3) : (isReg[2] ? "x" : "") + std::to_string(op3);
+        std::string operand = isImmediateLast ? std::to_string(op3) : (isReg[2] ? getRegisterName(op3, din) : std::to_string(op3));
         operands.push_back(operand);
     }
 
@@ -317,40 +351,41 @@ void Decoder::printOperands(int op1, int op2, int op3, std::vector<std::string>&
     }
 }
 
-void Decoder::addRegisters(InstructionVariables& vars, std::vector<std::string>& printStatement, uint8_t opcode) {
+void Decoder::addRegisters(InstructionVariables& vars, std::vector<std::string>& printStatement, uint8_t opcode, std::string din) {
     switch (opcode) {
+        case OPTCODE_FP:
         case OPCODE_R_TYPE:
-            printOperands(vars.rd, vars.rs1, vars.rs2, printStatement, {true, true, true});
+            printOperands(vars.rd, vars.rs1, vars.rs2, din, printStatement, {true, true, true});
             break;
         case OPCODE_I_TYPE:
-            printOperands(vars.rd, vars.rs1, vars.immediate, printStatement, {true, true, false}, true);
+            printOperands(vars.rd, vars.rs1, vars.immediate, din, printStatement, {true, true, false}, true);
             break;
         case OPCODE_LOAD:
         case OPCODE_LOAD_FP:
-            if (vars.rd != NO_REGISTER) printStatement.push_back("x" + std::to_string(vars.rd) + ",");
+            if (vars.rd != NO_REGISTER) printStatement.push_back(getRegisterName(vars.rd, din) + ",");
             if (vars.immediate != NO_IMMEDIATE && vars.rs1 != NO_REGISTER)
-                printStatement.push_back(std::to_string(vars.immediate) + "(x" + std::to_string(vars.rs1) + ")");
+                printStatement.push_back(std::to_string(vars.immediate) + "(" + getRegisterName(vars.rs1, din) + ")");
             break;
         case OPCODE_S_TYPE:
         case OPCODE_S_TYPE_FP:
-            if (vars.rs2 != NO_REGISTER) printStatement.push_back("x" + std::to_string(vars.rs2) + ",");
+            if (vars.rs2 != NO_REGISTER) printStatement.push_back(getRegisterName(vars.rs2, din) + ",");
             if (vars.immediate != NO_IMMEDIATE && vars.rs1 != NO_REGISTER)
-                printStatement.push_back(std::to_string(vars.immediate) + "(x" + std::to_string(vars.rs1) + ")");
+                printStatement.push_back(std::to_string(vars.immediate) + "(" + getRegisterName(vars.rs1, din) + ")");
             break;
         case OPCODE_SB_TYPE:
-            printOperands(vars.rs1, vars.rs2, vars.immediate, printStatement, {true, true, false}, true);
+            printOperands(vars.rs1, vars.rs2, vars.immediate, din, printStatement, {true, true, false}, true);
             break;
         case OPCODE_LUI:
         case OPCODE_AUIPC:
-            printOperands(vars.rd, vars.immediate, NO_IMMEDIATE, printStatement, {true, false, false}, true);
+            printOperands(vars.rd, vars.immediate, NO_IMMEDIATE, din, printStatement, {true, false, false}, true);
             break;
         case OPCODE_JAL:
-            printOperands(vars.rd, vars.immediate, NO_IMMEDIATE, printStatement, {true, false, false}, true);
+            printOperands(vars.rd, vars.immediate, NO_IMMEDIATE, din, printStatement, {true, false, false}, true);
             break;
         case OPCODE_JALR:
-            if (vars.rd != NO_REGISTER) printStatement.push_back("x" + std::to_string(vars.rd) + ",");
+            if (vars.rd != NO_REGISTER) printStatement.push_back(getRegisterName(vars.rd, din) + ",");
             if (vars.immediate != NO_IMMEDIATE && vars.rs1 != NO_REGISTER)
-                printStatement.push_back(std::to_string(vars.immediate) + "(x" + std::to_string(vars.rs1) + ")");
+                printStatement.push_back(std::to_string(vars.immediate) + "(" + getRegisterName(vars.rs1, din) + ")");
             break;
         default:
             break;

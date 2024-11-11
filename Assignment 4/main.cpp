@@ -7,7 +7,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::string filename = argv[1]; // Get the filename from command-line arguments
-    int limit = 3;
+    int limit = 10;
     Simulator sim(limit);
     sim.load_instructions_from_binary(filename);
     sim.run();

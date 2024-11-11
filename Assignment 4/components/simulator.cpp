@@ -9,10 +9,11 @@ Simulator::Simulator(int num_runs)
     pipeline_registers["Decode"] = nullptr;
     pipeline_registers["Execute"] = nullptr;
     pipeline_registers["Store"] = nullptr;
-    registers["x10"] = 0;
-    registers["x11"] = 0;
-    registers["x12"] = 0;
-    registers["x13"] = 0;
+    registers["sp"] = 0x3FF;                // Address of end of the stack
+    registers["ra"] = 1;
+    registers["s0"] = 2;
+    registers["a0"] = 3;
+    registers["zero"] = 0;
 }
 
 void Simulator::load_instructions_from_binary(const std::string& filename) {
@@ -75,6 +76,10 @@ void Simulator::decode() {
     if (pipeline_registers["Fetch"] != nullptr) {
         Instruction* fetched_instr = pipeline_registers["Fetch"];
         uint32_t instruction_value = fetched_instr->binary;
+
+        if (instruction_value == 0x52027){
+            std::cout << "";
+        }
         
         std::string decodedName = decoder.decodeInstruction(instruction_value);
         std::vector<std::string> operands = split_instruction(decodedName);
@@ -148,78 +153,7 @@ void Simulator::execute_instruction(Instruction* instr) {
 
     std::string name = operands[0];  // The first operand is the instruction name
 
-    if (name == "la") {
-        // Load address into the register
-        if (operands.size() >= 2) {
-            if (operands[1] == "x10") {
-                registers["x10"] = 0x0400; // Address for ARRAY_A
-                std::cout << "Loaded address 0x0400 into x10." << std::endl;
-            } else if (operands[1] == "x11") {
-                registers["x11"] = 0x0800; // Address for ARRAY_B
-                std::cout << "Loaded address 0x0800 into x11." << std::endl;
-            } else if (operands[1] == "x12") {
-                registers["x12"] = 0x0C00; // Address for ARRAY_C
-                std::cout << "Loaded address 0x0C00 into x12." << std::endl;
-            }
-        }
-    } else if (name == "li") {
-        // Load immediate value into the register
-        if (operands.size() >= 3) {
-            registers[operands[1]] = std::stoi(operands[2]);
-            std::cout << "Loaded immediate " << operands[2] << " into " << operands[1] << "." << std::endl;
-        }
-    } if (name == "flw") {
-        if (operands.size() >= 3) {
-            std::string f_reg = operands[1];
-            std::string addr_reg = operands[2];
-
-            size_t left_paren = addr_reg.find('(');
-            size_t right_paren = addr_reg.find(')');
-            int offset = std::stoi(addr_reg.substr(0, left_paren));
-            std::string base_reg = addr_reg.substr(left_paren + 1, right_paren - left_paren - 1);
-
-            int base_addr = registers[base_reg];
-
-            uint32_t raw_value = ram.read(base_addr + offset);
-            float value;
-            // std::memcpy(&value, &raw_value, sizeof(float));
-
-            f_registers[f_reg] = value;
-            std::cout << "Loaded " << value << " into " << f_reg << " from memory address " << std::hex << (base_addr + offset) << "." << std::dec << std::endl;
-        }
-    } else if (name == "fadd.s") {
-        // Floating point addition
-        if (operands.size() >= 4) {
-            std::string dest_reg = operands[1]; // Destination register
-            std::string src_reg1 = operands[2]; // First source register
-            std::string src_reg2 = operands[3]; // Second source register
-
-            f_registers[dest_reg] = f_registers[src_reg1] + f_registers[src_reg2];
-            std::cout << "Added " << f_registers[src_reg1] << " and " << f_registers[src_reg2] 
-                    << ", result in " << dest_reg << ": " << f_registers[dest_reg] << "." << std::endl;
-        }
-    } else if (name == "fsw") {
-        // Store floating point word from register into memory
-        if (operands.size() >= 3) {
-            std::string f_reg = operands[1]; // e.g., "f2"
-            std::string addr_reg = operands[2]; // e.g., "0(x12)"
-
-            int base_addr = registers[addr_reg.substr(3, 3)];
-            int offset = std::stoi(addr_reg.substr(0, addr_reg.find('(')));
-
-            // memory[base_addr + offset] = f_registers[f_reg];
-            std::cout << "Stored " << f_registers[f_reg] << " from " << f_reg 
-                    << " into memory address " << (base_addr + offset) << "." << std::endl;
-        }
-    } else if (name == "auipc") {
-        // Add Upper Immediate to PC
-        if (operands.size() >= 3) {
-            std::string reg = operands[1];
-            int immediate = std::stoi(operands[2], nullptr, 16); // Convert hex string to integer
-            registers[reg] = pc + (immediate << 12); // Shift left by 12 bits
-            std::cout << "AUIPC: Loaded " << registers[reg] << " into " << reg << " with immediate " << immediate << "." << std::endl;
-        }
-    } else if (name == "addi") {
+    if (name == "addi") {
         // Add Immediate
         if (operands.size() >= 4) {
             std::string dest_reg = operands[1];
@@ -227,18 +161,71 @@ void Simulator::execute_instruction(Instruction* instr) {
             int immediate = std::stoi(operands[3]);
 
             registers[dest_reg] = registers[src_reg] + immediate;
-            std::cout << "ADDI: Added " << immediate << " to " << src_reg << ", result in " << dest_reg << ": " << registers[dest_reg] << "." << std::endl;
+            std::cout << "Execute: " << "ADDI: Added " << immediate << " to " << src_reg << ", result in " << dest_reg << ": " << registers[dest_reg] << "." << std::endl;
         }
-    } else if (name == "jalr") {
-        // Jump and Link Register
+    } else if (name == "add") {
+        // Add Immediate
+        if (operands.size() >= 4) {
+            std::string dest_reg = operands[1];
+            std::string op0_reg = operands[2];
+            std::string op1_reg = operands[3];
+
+            uint32_t val0 = registers[op0_reg];
+            uint32_t val1 = registers[op1_reg];
+
+            registers[dest_reg] = val0 + val1;
+            std::cout << "Execute: " << "ADD: " << op0_reg << ": " << val0 << " + " 
+            << op1_reg << ": " << val1 << " = " << dest_reg << ": " << registers[dest_reg] <<   std::endl;
+        }
+    } else if (name == "sw") {
+        // Store Word
+        if (operands.size() >= 3) {
+            std::string src_reg = operands[1];
+            std::string addr_reg_offset = operands[2];
+            size_t start = addr_reg_offset.find('(');
+            size_t end = addr_reg_offset.find(')');
+
+            std::string addr_reg = addr_reg_offset.substr(start + 1, end - start - 1);
+            int offset = std::stoi(addr_reg_offset.substr(0, start));
+
+            int base_addr = registers[addr_reg];
+            uint32_t effective_addr = registers[addr_reg] + offset;
+            uint32_t value = registers[src_reg];
+
+            ram.write(effective_addr, value);
+            std::cout<< "Execute: " << "SW: Stored " << registers[src_reg] << " into memory address " << effective_addr << "." << std::endl;
+        }
+    } else if (name == "lw") {
+        // Load Word
+        // std::cout << "Execute: LW: Currently not working" << std::endl;
+        // return; // ISUEE WITH lw
         if (operands.size() >= 3) {
             std::string dest_reg = operands[1];
-            int offset = std::stoi(operands[2]);
+            std::string addr_reg_offset = operands[2];
+            size_t start = addr_reg_offset.find('(');
+            size_t end = addr_reg_offset.find(')');
 
-            pc += offset; // Jump to the address
-            registers[dest_reg] = pc; // Save return address
-            std::cout << "JALR: Jumped to address " << pc << ", return address in " << dest_reg << ": " << registers[dest_reg] << "." << std::endl;
+            std::string addr_reg = addr_reg_offset.substr(start + 1, end - start - 1);
+            int offset = std::stoi(addr_reg_offset.substr(0, start));
+
+            int base_addr = registers[addr_reg];
+            uint32_t effective_addr = registers[addr_reg] + offset;
+
+            registers[dest_reg] = ram.read(effective_addr);
+
+            std::cout << "Execute: " << "LW: Loaded " << registers[dest_reg] << " into " << dest_reg << " from memory address " << (base_addr + offset) << "." << std::endl;
         }
+    } else if (name == "blt"){
+        std::string less_reg = operands[1];
+        std::string base_reg = operands[2];
+        int immediate = std::stoi(operands[3]);
+        if (registers[less_reg] < registers[base_reg]){
+            pc = immediate;
+            std::cout << "Execute: " << "BLT: Jumped to " << immediate << registers[less_reg] << " < " << registers[base_reg] << std::endl;
+        } else{
+            std::cout << "Execute: " << "BLT: Didnt jump to " << immediate << " not " << registers[less_reg] << " < " << registers[base_reg] << std::endl;
+        }
+
     } else if (name == "slli") {
         // Shift Left Logical Immediate
         if (operands.size() >= 4) {
@@ -249,29 +236,79 @@ void Simulator::execute_instruction(Instruction* instr) {
             registers[dest_reg] = registers[src_reg] << shift_amount;
             std::cout << "SLLI: Shifted " << src_reg << " left by " << shift_amount << ", result in " << dest_reg << ": " << registers[dest_reg] << "." << std::endl;
         }
-    } else if (name == "lw") {
-        // Load Word
+    } else if (name == "flw") {
+        if (operands.size() >= 3) {
+            std::string f_reg = operands[1];
+            std::string addr_reg_offset = operands[2];
+
+            size_t start = addr_reg_offset.find('(');
+            size_t end = addr_reg_offset.find(')');
+            std::string addr_reg = addr_reg_offset.substr(start + 1, end - start - 1);
+            int offset = std::stoi(addr_reg_offset.substr(0, start));
+
+            int base_addr = registers[addr_reg];
+            uint32_t effective_addr = registers[addr_reg] + offset;
+
+            registers[f_reg] = ram.read(effective_addr);
+
+            std::cout << "Loaded " << registers[f_reg] << " into " << f_reg << " from memory address " << std::hex << (effective_addr) << "." << std::dec << std::endl;
+        }
+    } else if (name == "fadd.s") {
+        // Floating point addition
+        if (operands.size() >= 4) {
+            std::string dest_reg = operands[1]; // Destination register
+            std::string op0_reg = operands[2]; // First source register
+            std::string op1_reg = operands[3]; // Second source register
+
+            uint32_t val0 = registers[op0_reg];
+            uint32_t val1 = registers[op1_reg];
+
+            registers[dest_reg] = val0 + val1;
+            std::cout << "Execute: " << "FADD.s: " << op0_reg << ": " << val0 << " + " 
+            << op1_reg << ": " << val1 << " = " << dest_reg << ": " << registers[dest_reg] <<   std::endl;
+        }
+    } else if (name == "fsw") {
+        // Store floating point word from register into memory
+        if (operands.size() >= 3) {
+            std::string f_reg = operands[1]; // e.g., "f2"
+            std::string addr_reg_offset = operands[2]; // e.g., "0(x12)"
+
+            size_t start = addr_reg_offset.find('(');
+            size_t end = addr_reg_offset.find(')');
+            std::string addr_reg = addr_reg_offset.substr(start + 1, end - start - 1);
+            int offset = std::stoi(addr_reg_offset.substr(0, start));
+
+            int base_addr = registers[addr_reg];
+            uint32_t effective_addr = registers[addr_reg] + offset;
+
+            uint32_t value = registers[f_reg];
+
+            ram.write(effective_addr, value);
+            std::cout<< "Execute: " << "FSW: Stored " << registers[f_reg] << " into memory address " << effective_addr << "." << std::endl;
+        }
+    } else if (name == "jal"){
+        int shift_amount = std::stoi(operands[2]);
+        pc = shift_amount;
+        pipeline_registers["Fetch"] = nullptr;
+    }
+    
+    else if (name == "auipc") {
+        // Add Upper Immediate to PC
+        if (operands.size() >= 3) {
+            std::string reg = operands[1];
+            int immediate = std::stoi(operands[2], nullptr, 16); // Convert hex string to integer
+            registers[reg] = pc + (immediate << 12); // Shift left by 12 bits
+            std::cout << "AUIPC: Loaded " << registers[reg] << " into " << reg << " with immediate " << immediate << "." << std::endl;
+        }
+    } else if (name == "jalr") {
+        // Jump and Link Register
         if (operands.size() >= 3) {
             std::string dest_reg = operands[1];
-            std::string addr_reg = operands[2];
+            int offset = std::stoi(operands[2]);
 
-            int base_addr = registers[addr_reg.substr(3, 3)]; // Extract base register
-            int offset = std::stoi(addr_reg.substr(0, addr_reg.find('('))); // Extract offset
-
-            // registers[dest_reg] = memory[base_addr + offset]; // Load value from memory
-            std::cout << "LW: Loaded " << registers[dest_reg] << " into " << dest_reg << " from memory address " << (base_addr + offset) << "." << std::endl;
-        }
-    } else if (name == "sw") {
-        // Store Word
-        if (operands.size() >= 3) {
-            std::string src_reg = operands[1];
-            std::string addr_reg = operands[2];
-
-            int base_addr = registers[addr_reg.substr(3, 3)];
-            int offset = std::stoi(addr_reg.substr(0, addr_reg.find('(')));
-
-            // memory[base_addr + offset] = registers[src_reg]; // Store value to memory
-            std::cout << "SW: Stored " << registers[src_reg] << " into memory address " << (base_addr + offset) << "." << std::endl;
+            pc += offset; // Jump to the address
+            registers[dest_reg] = pc; // Save return address
+            std::cout << "JALR: Jumped to address " << pc << ", return address in " << dest_reg << ": " << registers[dest_reg] << "." << std::endl;
         }
     } else if (name == "beq") {
         // Branch if Equal
