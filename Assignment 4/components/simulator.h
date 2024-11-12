@@ -47,6 +47,9 @@ class Simulator {
 private:
     uint32_t max_instruction_address;
     int clock_cycle;
+    int store_counter;
+    int excecute_counter;
+    int decode_counter;
     const int clock_cycle_limit;
     int sim_ticks;
     int pc;
@@ -62,6 +65,7 @@ private:
 public:
     RAM ram;
     Simulator(int num_runs = 0);
+    int delay = 0;
     void load_instructions_from_binary(const std::string& filename);
     void fetch();
     void decode();
@@ -69,6 +73,7 @@ public:
     void store();
     void clean_event_list(Instruction* instr);
     void execute_instruction(Instruction* instr);
+    void delay_cycles(int cycle_count);
     std::string to_hex_string(uint32_t instruction);
     std::vector<std::string> split_instruction(const std::string& instruction);
     void flush_pipeline();

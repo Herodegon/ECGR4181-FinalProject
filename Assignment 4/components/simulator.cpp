@@ -41,10 +41,20 @@ void Simulator::load_instructions_from_binary(const std::string& filename) {
     infile.close();
 }
 
+// Delay function to simulate clock cycle delays
+void Simulator::delay_cycles(int cycle_count) {
+    delay = cycle_count * 10;  // Convert cycle count to ticks 
+}
+
 void Simulator::fetch() {
-    if (stall_count > 0) {
-        std::cout << "Fetch: " << "Fetch stage is stalled." << std::endl;
-        stall_count--;
+    if (delay > 0) {
+        if (pipeline_registers["Fetch"] != nullptr) {
+            std::cout << "Fetch: Fetching instruction 0x" 
+                      << pipeline_registers["Fetch"]->name 
+                      << ", Delay remaining: " << delay << std::endl;
+        } else {
+            std::cout << "Fetch: Waiting for delay to complete. Delay remaining: " << delay << std::endl;
+        }
         return;
     }
 
@@ -58,9 +68,10 @@ void Simulator::fetch() {
             instr->cycle_entered["Fetch"] = clock_cycle;
             pipeline_registers["Fetch"] = instr;
             event_list.push_back({instr->name, "Fetch", clock_cycle});
-            std::cout << "Fetch: " << "Fetching instruction " << instr->name << std::endl;
+            std::cout << "Fetch: Fetching instruction " << instr->name << std::endl;
 
             pc += 4;
+            delay_cycles(2);  // Add 2 cycles (20 ticks) delay
         } catch (const std::out_of_range& e) {
             std::cerr << "PC out of bounds: " << e.what() << std::endl;
             halt = true;
@@ -68,62 +79,113 @@ void Simulator::fetch() {
         }
     } else {
         pipeline_registers["Fetch"] = nullptr;
-        // halt = true;
     }
 }
 
 void Simulator::decode() {
     if (pipeline_registers["Fetch"] != nullptr) {
+        decode_counter = 1;
         Instruction* fetched_instr = pipeline_registers["Fetch"];
         uint32_t instruction_value = fetched_instr->binary;
 
-        if (instruction_value == 0x52027){
-            std::cout << "";
-        }
-        
+        // Decode the instruction name
         std::string decodedName = decoder.decodeInstruction(instruction_value);
+
+        // Check if a delay is active and output the delay message if so
+        if (delay > 0) {
+            std::cout << "Decoder: " << decodedName << " Delay remaining: " << delay << std::endl;
+            return;
+        }
+
+        // Decode operands if no delay
         std::vector<std::string> operands = split_instruction(decodedName);
-        
         fetched_instr->operands = operands;
         std::cout << "Decoder: " << decodedName << std::endl;
+
+        // Move instruction to Decode stage
         pipeline_registers["Decode"] = fetched_instr;
         pipeline_registers["Fetch"] = nullptr;
     } else {
-        std::cout << "Decoder: " << "No instruction to decode." << std::endl;
+        std::cout << "Decoder: No instruction to decode." << std::endl;
+        decode_counter = 0;
     }
 }
 
 void Simulator::execute() {
-    if (stall_count > 0) {
-        std::cout << "Cycle " << clock_cycle << ": Execute stage is stalled." << std::endl;
-        stall_count--;
+    if (delay > 0) {
+        std::cout << "Execute: Waiting for delay to complete. Delay remaining: " << delay << std::endl;
         return;
     }
 
     Instruction* instr = pipeline_registers["Decode"];
     if (instr) {
+        excecute_counter = 1;
         instr->stage = "Execute";
         instr->cycle_entered["Execute"] = clock_cycle;
+
         execute_instruction(instr);
+
+        int delay_amount = (instr->name.find("f") != std::string::npos) ? 5 :
+                           ((instr->name == "sw" || instr->name == "lw" || instr->name == "fsw") ? 2 :
+                           ((instr->name == "addi" || instr->name == "and" || instr->name == "or" || instr->name == "xori") ? 1 : 0));
+
+        if (delay_amount > 0) delay_cycles(delay_amount);  // Delay as needed
+
         event_list.push_back({instr->name, "Execute", clock_cycle});
         pipeline_registers["Execute"] = instr;
         pipeline_registers["Decode"] = nullptr;
     } else {
-        std::cout << "Execute: " << "No instruction to execute." << std::endl;
+        std::cout << "Execute: No instruction to execute." << std::endl;
+        excecute_counter = 0;
     }
 }
 
 void Simulator::store() {
+    static uint32_t effective_addr = 0;
+    static std::string src_reg;
+
+    // Handle delay countdown with improved output format
+    if (delay > 0) {
+        std::cout << "Store: Waiting to store " << registers[src_reg] 
+                  << " into memory address " << effective_addr 
+                  << ". Delay remaining: " << delay << std::endl;
+        return;
+    }
+
     Instruction* instr = pipeline_registers["Execute"];
     if (instr) {
+        store_counter = 1;
         instr->stage = "Store";
         instr->cycle_entered["Store"] = clock_cycle;
         event_list.push_back({instr->name, "Store", clock_cycle});
         pipeline_registers["Store"] = instr;
         pipeline_registers["Execute"] = nullptr;
-        std::cout << "Store: " << "Storing " << instr->name << "." << std::endl;
+
+        std::vector<std::string>& operands = instr->operands;
+        std::string name = operands[0];  // The instruction name
+
+        if (name == "sw" || name == "fsw") {
+            src_reg = operands[1];
+            std::string addr_reg_offset = operands[2];
+
+            size_t start = addr_reg_offset.find('(');
+            size_t end = addr_reg_offset.find(')');
+            std::string addr_reg = addr_reg_offset.substr(start + 1, end - start - 1);
+            int offset = std::stoi(addr_reg_offset.substr(0, start));
+
+            int base_addr = registers[addr_reg];
+            effective_addr = base_addr + offset;
+            uint32_t value = registers[src_reg];
+            ram.write(effective_addr, value);
+
+            std::cout << "Store: Stored " << value << " into memory address " << effective_addr << "." << std::endl;
+            delay_cycles(2);  // 2-cycle delay for store instructions
+        } else {
+            std::cout << "Store: No store instruction to process." << std::endl;
+        }
     } else {
-        std::cout << "Store: " << "No instruction to store." << std::endl;
+        std::cout << "Store: No instruction to store." << std::endl;
+        store_counter = 0;
     }
 }
 
@@ -432,8 +494,9 @@ void Simulator::run() {
         decode();
         fetch();
         std::cout << "--------------------------------------------------" << std::endl;
-
-        if (stall_count > 0) stall_count--;
+        if(delay > 0){
+            delay--;
+        }
 
         // print_event_list();
         // print_instructions();
@@ -442,6 +505,15 @@ void Simulator::run() {
         if (halt) {
             flush_pipeline();
             break;
+        }
+        if (delay == 0 &&
+            clock_cycle > 10 &&
+            store_counter == 0 && 
+            excecute_counter == 0 && 
+            decode_counter == 0) {
+            
+            std::cout << "Simulation completed at clock cycle: " << clock_cycle << std::endl;
+            break;  // End the simulation
         }
     }
 }
