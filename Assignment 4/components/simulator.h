@@ -50,6 +50,10 @@ private:
     int store_counter;
     int excecute_counter;
     int decode_counter;
+    int fetch_delay = 0;
+    int decode_delay = 0;
+    int execute_delay = 0;
+    int store_delay = 0;
     const int clock_cycle_limit;
     int sim_ticks;
     int pc;

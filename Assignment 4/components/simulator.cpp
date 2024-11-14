@@ -126,8 +126,7 @@ void Simulator::execute() {
         execute_instruction(instr);
 
         int delay_amount = (instr->name.find("f") != std::string::npos) ? 5 :
-                           ((instr->name == "sw" || instr->name == "lw" || instr->name == "fsw") ? 2 :
-                           ((instr->name == "addi" || instr->name == "and" || instr->name == "or" || instr->name == "xori") ? 1 : 0));
+                           (((instr->name == "addi" || instr->name == "and" || instr->name == "or" || instr->name == "xori") ? 1 : 0));
 
         if (delay_amount > 0) delay_cycles(delay_amount);  // Delay as needed
 
@@ -497,7 +496,6 @@ void Simulator::run() {
         if(delay > 0){
             delay--;
         }
-
         // print_event_list();
         // print_instructions();
         // print_registers();
@@ -506,8 +504,7 @@ void Simulator::run() {
             flush_pipeline();
             break;
         }
-        if (delay == 0 &&
-            clock_cycle > 10 &&
+        if (clock_cycle > 10 &&
             store_counter == 0 && 
             excecute_counter == 0 && 
             decode_counter == 0) {
