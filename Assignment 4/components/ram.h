@@ -4,6 +4,16 @@
 
 #include <cstdint>
 #include <iostream>
+#include <vector>
+#include <cstdlib>    // for rand()
+#include <cstring>    // for std::memcpy
+#include <climits>
+#include <map>
+
+struct AddressDelay {
+    uint32_t load;
+    uint32_t store;
+};
 
 class RAM {
 public:
@@ -14,16 +24,21 @@ public:
     RAM();
 
     // Read a 32-bit word from RAM with simulated latency
-    uint32_t read(uint32_t address);
+    std::vector<uint32_t> read(uint32_t address, bool bypass);
 
     // Write a 32-bit word to RAM with simulated latency
-    void write(uint32_t address, uint32_t value);
+    std::vector<uint32_t> write(uint32_t address, uint32_t value, bool bypass);
 
     // Print memory contents for debugging
     void print(uint32_t start, uint32_t end) const;
 
 private:
     uint8_t memory[RAM_SIZE];  // RAM storage array
+
+    // Map to keep track of delays per address
+    std::map<uint32_t, AddressDelay> addressDelays;
+
+    int read_write_delay;
 
     // Initialize specific memory regions as per specifications
     void initializeMemoryRegions();

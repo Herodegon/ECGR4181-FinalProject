@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <variant>
 #include <cstdint>
+#include <climits>
 #include <bitset>
 #include <limits>
 #include <set>
@@ -54,6 +55,10 @@ private:
     int decode_delay = 0;
     int execute_delay = 0;
     int store_delay = 0;
+    int address2Store = 0;
+    int complete = 0;
+    bool store_complete = false;
+    bool execute_complete = false;
     const int clock_cycle_limit;
     int sim_ticks;
     int pc;
@@ -61,7 +66,7 @@ private:
     std::map<std::string, Instruction*> pipeline_registers;
     std::vector<Instruction*> instructions;
     std::map<std::string, int> registers;
-    std::map<std::string, double> f_registers;
+    std::map<std::string, int> delays;
     bool halt;
     int stall_count;
     Decoder decoder;
@@ -76,8 +81,8 @@ public:
     void execute();
     void store();
     void clean_event_list(Instruction* instr);
-    void execute_instruction(Instruction* instr);
-    void delay_cycles(int cycle_count);
+    void execute_instruction(std::string, std::vector<std::string>);
+    int delay_cycles(int cycle_count);
     std::string to_hex_string(uint32_t instruction);
     std::vector<std::string> split_instruction(const std::string& instruction);
     void flush_pipeline();

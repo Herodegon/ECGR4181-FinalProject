@@ -38,7 +38,7 @@ main:                       # 0 Addr 0x0
 	sw a0, -16(s0)          # 128 Stores updated i
 	j .LBB0_1               # 132 Jumps back to the start of the loop | jal zero, -80 0xFB1FF06F changed to 0x0200006F
 
-.LBB0_4:				# Addr 0x80
+.LBB0_4:					# Addr 0x80
 	lw a0, -12(s0)          # Loads another variable at -12(s0) (if needed)
 	lw s0, 8(sp)            # Restores s0 register
 	lw ra, 12(sp)           # Restores return address

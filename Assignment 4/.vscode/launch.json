@@ -20,7 +20,7 @@
                 }
             ],
             "preLaunchTask": "build assignment",
-            "miDebuggerPath": "/usr/bin/g++", //"C:\\msys64\\ucrt64\\bin\\gdb.exe", // "C:\\msys64\\ucrt64\\bin\\gdb.exe",
+            "miDebuggerPath": "C:\\msys64\\ucrt64\\bin\\gdb.exe", // "C:\\msys64\\ucrt64\\bin\\gdb.exe",
             "logging": {
                 "engineLogging": false,
                 "trace": false,
