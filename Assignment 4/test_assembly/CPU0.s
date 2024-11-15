@@ -21,14 +21,14 @@ main:                       # 0 Addr 0x0
 	flw ft0, 0(a0)          # 76 Loads ARRAY_A[i] into ft0
 # 18
 	mv a0, zero       		# 80 Loads high part of ARRAY_B address # ISSUE lui a0, 0
-	addi a0, a0, 2048     	# 84 Loads base address of ARRAY_B into a0 Changed from 0x80052503 to 0x7FF52503 lw x10, 2047(x10)
+	addi a0, a0, 2048     	# 84 Loads base address of ARRAY_B into a0 # ADD TWO HERE
 	add a0, a0, a1          # 88 Adds offset to base address of ARRAY_B
 	flw ft1, 0(a0)          # 92 Loads ARRAY_B[i] into ft1
 # 22
 	fadd.s ft0, ft0, ft1    # 96 Adds ARRAY_A[i] and ARRAY_B[i] into ft0 ISSUE ""
 # 23
 	mv a0, zero       		# 100 Loads high part of ARRAY_C address # ISSUE lui a0, 0
-	addi a0, a0, 3072	    # 104 Loads base address of ARRAY_C into a0
+	addi a0, a0, 3072     	# 84 Loads base address of ARRAY_B into a0 # ADD TWO HERE
 	add a0, a0, a1          # 108 Adds offset to base address of ARRAY_C
 	fsw ft0, 0(a0)          # 112 Stores result in ARRAY_C[i] ISSUE ra, 0(a0)
 

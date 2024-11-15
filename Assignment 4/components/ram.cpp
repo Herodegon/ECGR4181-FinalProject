@@ -6,7 +6,7 @@ RAM::RAM() {
     std::memset(memory, 0, RAM_SIZE);   // Initialize RAM with zeroes
     initializeMemoryRegions();          // Initialize arrays with random FP32 values
 
-    read_write_delay = 20;
+    read_write_delay = 2;
 }
 
 // Read a 32-bit word from RAM with simulated latency
@@ -36,7 +36,7 @@ std::vector<uint32_t> RAM::read(uint32_t address, bool bypass) {
     // Then, handle the load delay
     if (delays.load == 0) {
         // Set initial load delay
-        delays.load = read_write_delay - 1; // Subtract 1 because we'll decrement it now
+        delays.load = read_write_delay; // Subtract 1 because we'll decrement it now
         output = {UINT32_MAX, delays.store, delays.load};
         return output; // Operation pending
     } else if (delays.load > 1) {
@@ -58,7 +58,7 @@ std::vector<uint32_t> RAM::read(uint32_t address, bool bypass) {
 }
 
 // Write a 32-bit word to RAM with simulated latency
-std::vector<uint32_t> RAM::write(uint32_t address, uint32_t value, bool bypass) {
+std::vector<uint32_t> RAM::write(uint32_t address, uint32_t value, uint32_t added_delay, bool bypass) {
     if (address + 4 > RAM_SIZE) {
         throw std::out_of_range("RAM write out of bounds.");
     }
@@ -76,7 +76,7 @@ std::vector<uint32_t> RAM::write(uint32_t address, uint32_t value, bool bypass) 
     // Handle the store delay
     if (delays.store == 0) {
         // Set initial store delay
-        delays.store = read_write_delay - 1; // Subtract 1 because we'll decrement it now
+        delays.store = read_write_delay + added_delay; 
         output = {false, delays.store};
         return output; // Operation pending
     } else if (delays.store > 1) {
@@ -112,7 +112,7 @@ void RAM::initializeMemoryRegions() {
     uint32_t value = 1;
     std::cout << std::endl;
     for (uint32_t address = 0x400; address < 0x7FF; address += 4) {
-        write(address, value, true);
+        write(address, value, 0, true);
         value += 1;
     }
     // for (uint32_t address = 0x400; address < 0x7FF; address += 4) {
@@ -123,7 +123,7 @@ void RAM::initializeMemoryRegions() {
     // }
     value = 1;
     for (uint32_t address = 0x800; address < 0xBFF; address += 4) {
-        write(address, value, true);
+        write(address, value, 0, true);
         value += 1;
     }
     // for (uint32_t address = 0x800; address < 0xBFF; address += 4) {

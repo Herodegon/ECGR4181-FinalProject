@@ -27,7 +27,7 @@ public:
     std::vector<uint32_t> read(uint32_t address, bool bypass);
 
     // Write a 32-bit word to RAM with simulated latency
-    std::vector<uint32_t> write(uint32_t address, uint32_t value, bool bypass);
+    std::vector<uint32_t> write(uint32_t address, uint32_t value, uint32_t added_delay, bool bypass);
 
     // Print memory contents for debugging
     void print(uint32_t start, uint32_t end) const;

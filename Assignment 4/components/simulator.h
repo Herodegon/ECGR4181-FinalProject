@@ -36,10 +36,12 @@ struct Instruction {
     std::vector<std::string> operands;
     std::string type;
     std::string stage;
+    int execute_delay;
+    int store_delay;
     double data;
     std::map<std::string, int> cycle_entered;
     Instruction(std::string n, uint32_t b, std::vector<std::string> ops, std::string t)
-        : name(n), binary(b), operands(ops), type(t), stage("Fetch"), data(0.0) {}
+        : name(n), binary(b), operands(ops), type(t), stage("Fetch"), execute_delay(0), store_delay(0), data(0.0) {}
 };
 
 const std::vector<std::string> pipeline_stages = {"Fetch", "Decode", "Execute", "Store"};
@@ -55,10 +57,12 @@ private:
     int decode_delay = 0;
     int execute_delay = 0;
     int store_delay = 0;
-    int address2Store = 0;
+    int fetching_active = 0;
     int complete = 0;
+    int instruction_count = 0;
     bool store_complete = false;
-    bool execute_complete = false;
+    bool execute_delay_complete = false;
+    bool store_delay_complete = false;
     const int clock_cycle_limit;
     int sim_ticks;
     int pc;
@@ -66,7 +70,7 @@ private:
     std::map<std::string, Instruction*> pipeline_registers;
     std::vector<Instruction*> instructions;
     std::map<std::string, int> registers;
-    std::map<std::string, int> delays;
+    std::map<std::string, bool> hold_registers;
     bool halt;
     int stall_count;
     Decoder decoder;
@@ -81,7 +85,8 @@ public:
     void execute();
     void store();
     void clean_event_list(Instruction* instr);
-    void execute_instruction(std::string, std::vector<std::string>);
+    void execute_instruction(Instruction*, std::string, std::vector<std::string>);
+    void store_instruction(std::string, std::vector<std::string>, int);
     int delay_cycles(int cycle_count);
     std::string to_hex_string(uint32_t instruction);
     std::vector<std::string> split_instruction(const std::string& instruction);
