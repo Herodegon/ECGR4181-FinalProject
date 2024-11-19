@@ -1,12 +1,25 @@
 #include "membus.h"
+#include <unordered_set>
+#include <iostream>
 
 // Constructor to initialize Membus with a reference to RAM
 Membus::Membus(RAM& ramInstance) : ram(ramInstance) {}
 
 // Adds a memory request to the queue
 void Membus::addRequest(int cpuId, uint32_t address, bool write, uint32_t value) {
-    Request req = { cpuId, address, write, value };
-    requestQueue.push(req);
+    // Check if the address is already in use
+    if (addressInUse.find(address) == addressInUse.end()) {
+        // Address is not in use, add it to the queue
+        Request req = { cpuId, address, write, value };
+        requestQueue.push(req);
+        // Mark the address as in use
+        addressInUse.insert(address);
+    } else {
+        // Address is already in use, add the request to the queue anyway
+        std::cout << "Address 0x" << std::hex << address << " is already in use. Queuing request." << std::endl;
+        Request req = { cpuId, address, write, value };
+        requestQueue.push(req);
+    }
 }
 
 // Process all the requests in the queue
@@ -22,6 +35,9 @@ void Membus::processRequests() {
             // Handle memory read: use the read method from RAM
             ram.read(req.address, false);  // Pass false for bypass
         }
+
+        // After processing, mark the address as no longer in use
+        addressInUse.erase(req.address);
     }
 }
 
@@ -33,6 +49,12 @@ std::vector<uint32_t> Membus::write(uint32_t address, uint32_t value, uint32_t a
 
 // Read method to interact with RAM
 std::vector<uint32_t> Membus::read(uint32_t address, bool bypass) {
-    // Call RAM's read method and return its result directly
+    // Adds the read request to the request queue
+    addRequest(0, address, false, 0);  // Address is read, no value to set
+
+    // Process the read request
+    processRequests();  // Process the read request
+
+    // Return the data from the last read operation (assuming you're using the RAM method)
     return ram.read(address, bypass);
 }

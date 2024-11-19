@@ -494,8 +494,12 @@ void Simulator::run() {
         int x = 0;
         std::cin >> x;
 
-        if (clock_cycle_limit != 0 && clock_cycle >= clock_cycle_limit) break;
+        if (clock_cycle_limit != 0 && clock_cycle >= clock_cycle_limit){
+            std::cout << "Really Bad" << std::endl;
+            break;
+        }
         if (halt) {
+            std::cout << "Not Good" << std::endl;
             flush_pipeline();
             break;
         }
@@ -510,14 +514,6 @@ void Simulator::run() {
             double cpi = static_cast<double>(clock_cycle) / instruction_count;
             std::cout << "Average CPI: " << cpi << std::endl;
             break;
-        }
-        if (clock_cycle > 10 &&
-            store_counter == 0 && 
-            excecute_counter == 0 && 
-            decode_counter == 0) {
-            
-            std::cout << "Simulation completed at clock cycle: " << clock_cycle << std::endl;
-            break;  // End the simulation
         }
     }
 }

@@ -3,6 +3,7 @@
 
 #include "ram.h"
 #include <queue>
+#include <unordered_set>
 #include <vector>
 #include <cstdint>
 
@@ -33,6 +34,7 @@ public:
 private:
     RAM& ram;  // Reference to RAM object for memory operations
     std::queue<Request> requestQueue;  // Queue for memory requests
+    std::unordered_set<uint32_t> addressInUse;  // Set to track which addresses are in use
 };
 
 #endif // MEMBUS_H
