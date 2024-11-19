@@ -1,5 +1,3 @@
-// simulator.h
-
 #ifndef SIMULATOR_H
 #define SIMULATOR_H
 
@@ -19,6 +17,7 @@
 #include <iomanip>
 #include <stdexcept>
 #include "decoder.h"
+#include "membus.h"
 #include "ram.h"
 
 const int STALL_INT = 10;       // Stall for integer instructions = 1 CPU cycle = 10 sim ticks
@@ -76,7 +75,9 @@ private:
     Decoder decoder;
 
 public:
-    RAM ram;
+    RAM ram;           // RAM instance for memory operations
+    Membus membus;     // Membus instance for managing memory transactions
+
     Simulator(int num_runs = 0);
     int delay = 0;
     void load_instructions_from_binary(const std::string& filename);

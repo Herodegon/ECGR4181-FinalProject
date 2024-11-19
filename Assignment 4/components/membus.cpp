@@ -20,35 +20,19 @@ void Membus::processRequests() {
             ram.write(req.address, req.data, 0, false);  // We pass 0 for added delay and false for bypass
         } else {
             // Handle memory read: use the read method from RAM
-            std::vector<uint32_t> data = ram.read(req.address, false);  // Pass false for bypass
-            // You can now use the 'data' returned from RAM for any additional logic
+            ram.read(req.address, false);  // Pass false for bypass
         }
     }
 }
 
 // Write method to interact with RAM
-uint32_t Membus::write(uint32_t address, uint32_t value, uint32_t added_delay, bool bypass) {
-    // Handle memory write logic, and return status or delay in cycles
-    if (!bypass) {
-        // Immediate write (bypass any latency)
-        ram.write(address, value, added_delay, bypass);
-        return 0;  // 0 indicates no delay
-    }
-
-    // Simulate latency and return the number of cycles remaining
-    return added_delay;  // Return the delay for the write operation
+std::vector<uint32_t> Membus::write(uint32_t address, uint32_t value, uint32_t added_delay, bool bypass) {
+    // Call RAM's write method and return its result directly
+    return ram.write(address, value, added_delay, bypass);
 }
 
 // Read method to interact with RAM
-uint32_t Membus::read(uint32_t address, int cpuId) {
-    // Adds the read request to the request queue
-    addRequest(cpuId, address, false, 0);
-    processRequests();  // Process the read request
-    // After processing, we can return data from the last read operation (assuming you're using the RAM method)
-    
-    // Since RAM read returns a vector, you can either return a specific element or handle this differently
-    std::vector<uint32_t> data = ram.read(address, false);  // We don't use bypass here
-
-    // Return the first element of the vector (assuming you want a single 32-bit word)
-    return data.empty() ? 0 : data[0];
+std::vector<uint32_t> Membus::read(uint32_t address, bool bypass) {
+    // Call RAM's read method and return its result directly
+    return ram.read(address, bypass);
 }

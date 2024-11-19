@@ -3,6 +3,7 @@
 
 #include "ram.h"
 #include <queue>
+#include <vector>
 #include <cstdint>
 
 class Membus {
@@ -23,11 +24,11 @@ public:
     // Processes the requests in the queue
     void processRequests();
 
-    // Write to memory and return the number of cycles remaining for completion
-    uint32_t write(uint32_t address, uint32_t value, uint32_t added_delay, bool bypass);
+    // Write to memory and return a vector of results
+    std::vector<uint32_t> write(uint32_t address, uint32_t value, uint32_t added_delay, bool bypass);
 
-    // Read from memory and return the data (or a specific value indicating a pending read)
-    uint32_t read(uint32_t address, int cpuId);
+    // Read from memory and return a vector of results
+    std::vector<uint32_t> read(uint32_t address, bool bypass);
 
 private:
     RAM& ram;  // Reference to RAM object for memory operations

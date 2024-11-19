@@ -4,7 +4,7 @@
 
 // Constructor
 Simulator::Simulator(int num_runs)
-    : clock_cycle(0), sim_ticks(0), clock_cycle_limit(num_runs), pc(0x0000), halt(false), stall_count(0) {
+    : clock_cycle_limit(num_runs), ram(), membus(ram), pc(0), halt(false), stall_count(0) {
     complete = 0;
     pipeline_registers["Fetch"] = nullptr;
     pipeline_registers["Decode"] = nullptr;
@@ -36,7 +36,7 @@ void Simulator::load_instructions_from_binary(const std::string& filename) {
             throw std::runtime_error("Error reading from binary file: " + filename);
         }
 
-        ram.write(address, instruction, 0, true);
+        membus.write(address, instruction, 0, true);
         max_instruction_address = address;
         address += 4;
     }
@@ -57,7 +57,7 @@ void Simulator::fetch() {
     if (pc <= max_instruction_address) {
         try {
             
-            std::vector<uint32_t> returnValues = ram.read(pc, false);
+            std::vector<uint32_t> returnValues = membus.read(pc, false);
             uint32_t instruction_value = returnValues[0];
 
             if (returnValues[0] == UINT32_MAX){
@@ -231,7 +231,7 @@ void Simulator::store_instruction(std::string name, std::vector<std::string> ope
 
         uint32_t value = registers[src_reg];
 
-        std::vector<uint32_t> returnValues = ram.write(effective_addr, value, added_delay, false);
+        std::vector<uint32_t> returnValues = membus.write(effective_addr, value, added_delay, false);
 
         if (returnValues[0]){
             std::cout << "Store: " << name << ": Store " << value << " into memory address " << effective_addr << " successful." << std::endl;
@@ -296,7 +296,7 @@ void Simulator::execute_instruction(Instruction* instr, std::string name, std::v
         int base_addr = registers[addr_reg];
         uint32_t effective_addr = registers[addr_reg] + offset;
 
-        std::vector<uint32_t> returnValues = ram.read(effective_addr, false);
+        std::vector<uint32_t> returnValues = membus.read(effective_addr, false);
 
         if (hold_registers[dest_reg]){
             std::cout <<  "Execute: Holding register " << dest_reg << "." << std::endl;
@@ -491,7 +491,8 @@ void Simulator::run() {
         decode();
         fetch();
         std::cout << "--------------------------------------------------" << std::endl;
-
+        int x = 0;
+        std::cin >> x;
 
         if (clock_cycle_limit != 0 && clock_cycle >= clock_cycle_limit) break;
         if (halt) {
