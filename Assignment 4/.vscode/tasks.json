@@ -7,12 +7,14 @@
             "command": "g++",
             "args": [
                 "-g",
-                "${workspaceFolder}/main.cpp",
+                "${workspaceFolder}/main_1.cpp",
                 "./components/decoder.cpp",
                 "./components/ram.cpp",
+                "./components/core.cpp",
                 "./components/simulator.cpp",
+                "./components/membus.cpp",
                 "-o",
-                "${workspaceFolder}/main.exe"
+                "${workspaceFolder}/main_1.exe"
             ],
             "group": {
                 "kind": "build",
@@ -21,41 +23,5 @@
             "problemMatcher": ["$gcc"],
             "detail": "Compiles the main.cpp file using g++"
         },
-        {
-            "label": "build testing",
-            "type": "shell",
-            "command": "g++",
-            "args": [
-                "-g",
-                "${workspaceFolder}/testing.cpp",
-                "${workspaceFolder}/ram.cpp",
-                "-o",
-                "${workspaceFolder}/testing"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "problemMatcher": ["$gcc"],
-            "detail": "Compiles the testing.cpp file with debugging enabled."
-        },
-        {
-            "label": "build newsim",
-            "type": "shell",
-            "command": "g++",
-            "args": [
-                "-g",
-                "${workspaceFolder}/NewSim.cpp",
-                "${workspaceFolder}/decoder.cpp",
-                "-o",
-                "${workspaceFolder}/NewSim"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "problemMatcher": ["$gcc"],
-            "detail": "Compiles the testing.cpp file with debugging enabled."
-        }
     ]
 }

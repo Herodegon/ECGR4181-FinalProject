@@ -8,6 +8,7 @@
 #include <cstdlib>    // for rand()
 #include <cstring>    // for std::memcpy
 #include <climits>
+#include <ctime>
 #include <map>
 
 struct AddressDelay {
@@ -17,7 +18,7 @@ struct AddressDelay {
 
 class RAM {
 public:
-    static const uint32_t RAM_SIZE = 0x13FF;  // Size of RAM
+    static const uint32_t RAM_SIZE = 0x1400;  // Size of RAM
     static const int READ_LATENCY = 20;       // RAM read latency in simulation ticks
     static const int WRITE_LATENCY = 20;      // RAM write latency in simulation ticks
 
@@ -31,6 +32,8 @@ public:
 
     // Print memory contents for debugging
     void print(uint32_t start, uint32_t end) const;
+
+    void printMath();
 
 private:
     uint8_t memory[RAM_SIZE];  // RAM storage array

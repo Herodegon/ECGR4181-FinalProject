@@ -97,39 +97,80 @@ std::vector<uint32_t> RAM::write(uint32_t address, uint32_t value, uint32_t adde
 }
 
 // Print memory contents for debugging
+// Print memory contents for debugging
 void RAM::print(uint32_t start, uint32_t end) const {
     for (uint32_t i = start; i < end; i += 4) {
-        uint32_t value;
-        std::memcpy(&value, &memory[i], sizeof(value));
-        std::cout << value << ' ';  // Print only the decimal value
+        uint32_t intValue;
+        std::memcpy(&intValue, &memory[i], sizeof(intValue));
+
+        float floatValue;
+        std::memcpy(&floatValue, &intValue, sizeof(floatValue));
+
+        std::cout << floatValue << ' ';  // Print as a floating-point value
     }
     std::cout << '\n';
 }
 
+void RAM::printMath() {
+    constexpr uint32_t arrayASize = 0x400; // Size of each array in bytes
+    constexpr uint32_t elementSize = 4;   // Size of each element (FP32)
+
+    // Iterate over the arrays and print calculations
+    for (uint32_t i = 0; i < arrayASize / elementSize; ++i) {
+        uint32_t addressA = 0x400 + i * elementSize;
+        uint32_t addressB = 0x800 + i * elementSize;
+        uint32_t addressC = 0xC00 + i * elementSize;
+        uint32_t addressD = 0x1000 + i * elementSize;
+
+        float valueA, valueB, valueC, valueD;
+
+        // Read values from RAM
+        std::memcpy(&valueA, &memory[addressA], sizeof(valueA));
+        std::memcpy(&valueB, &memory[addressB], sizeof(valueB));
+        std::memcpy(&valueC, &memory[addressC], sizeof(valueC));
+        std::memcpy(&valueD, &memory[addressD], sizeof(valueD));
+
+        // Print addition
+        std::cout << "Array_A[" << i << "] + Array_B[" << i << "] = Array_C[" << i << "] | "
+                  << valueA << " + " << valueB << " = " << valueC << std::endl;
+
+        // Print subtraction
+        std::cout << "Array_A[" << i << "] - Array_B[" << i << "] = Array_D[" << i << "] | "
+                  << valueA << " - " << valueB << " = " << valueD << std::endl;
+    }
+}
+
 // Initialize specific memory regions as per specifications
 void RAM::initializeMemoryRegions() {
-    // Initialize memory from 0x400 to 0xBFF with sequential uint32_t values starting from 1
-    uint32_t value = 1;
-    std::cout << std::endl;
-    for (uint32_t address = 0x400; address < 0x7FF; address += 4) {
+    // Seed the random number generator for reproducibility
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
+
+    // Helper lambda to generate constrained random FP32 values
+    auto generateRandomFP32 = []() -> float {
+        float randomValue;
+        uint32_t intValue;
+
+        do {
+            randomValue = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX); // Scale to [0.0, 1.0]
+            std::memcpy(&intValue, &randomValue, sizeof(intValue)); // Convert FP32 to uint32_t
+        } while (intValue == UINT32_MAX || intValue == UINT32_MAX - 1); // Regenerate if prohibited values
+
+        return randomValue;
+    };
+
+    // Initialize ARRAY_A (0x400 - 0x7FF) with random FP32 values in [0.0, 1.0]
+    for (uint32_t address = 0x400; address < 0x800; address += 4) {
+        float randomValue = generateRandomFP32();
+        uint32_t value;
+        std::memcpy(&value, &randomValue, sizeof(value)); // Convert FP32 to uint32_t
         write(address, value, 0, true);
-        value += 1;
     }
-    // for (uint32_t address = 0x400; address < 0x7FF; address += 4) {
-    //     float random_value = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-    //     uint32_t binary_value;
-    //     std::memcpy(&binary_value, &random_value, sizeof(binary_value));
-    //     write(address, binary_value, true);
-    // }
-    value = 1;
-    for (uint32_t address = 0x800; address < 0xBFF; address += 4) {
+
+    // Initialize ARRAY_B (0x800 - 0xBFF) with random FP32 values in [0.0, 1.0]
+    for (uint32_t address = 0x800; address < 0xC00; address += 4) {
+        float randomValue = generateRandomFP32();
+        uint32_t value;
+        std::memcpy(&value, &randomValue, sizeof(value)); // Convert FP32 to uint32_t
         write(address, value, 0, true);
-        value += 1;
     }
-    // for (uint32_t address = 0x800; address < 0xBFF; address += 4) {
-    //     float random_value = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-    //     uint32_t binary_value;
-    //     std::memcpy(&binary_value, &random_value, sizeof(binary_value));
-    //     write(address, binary_value, true);
-    // }
 }

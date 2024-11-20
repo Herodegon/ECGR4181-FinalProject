@@ -2,11 +2,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Assignment 4 Launch",
+            "name": "Assignment 4_1",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/main.exe",
-            "args": ["./test_assembly/CPU0.bin"],  // Added argument here
+            "program": "${workspaceFolder}/main_1.exe",
+            "args": ["./test_assembly/CPU0.bin", "./test_assembly/CPU1.bin"],  // Added argument here
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -29,13 +29,13 @@
                 "exceptions": true,
                 "moduleLoad": true
             }
-        },        
+        },
         {
-            "name": "Testing Features",
+            "name": "Assignment 4_2",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/testing",
-            "args": [],
+            "program": "${workspaceFolder}/main_2.exe",
+            "args": ["./test_assembly/CPU0_1.bin"],  // Added argument here
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -48,8 +48,8 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "build testing",
-            "miDebuggerPath": "C:\\msys64\\ucrt64\\bin\\gdb.exe",
+            "preLaunchTask": "build assignment",
+            "miDebuggerPath": "C:\\msys64\\ucrt64\\bin\\gdb.exe", // "C:\\msys64\\ucrt64\\bin\\gdb.exe",
             "logging": {
                 "engineLogging": false,
                 "trace": false,
@@ -58,6 +58,6 @@
                 "exceptions": true,
                 "moduleLoad": true
             }
-        }
+        },
     ]
 }
