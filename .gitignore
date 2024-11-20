@@ -30,8 +30,3 @@
 *.exe
 *.out
 *.app
-
-# VSCode Project Files
-launch.json
-settings.json
-tasks.json
