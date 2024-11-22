@@ -5,7 +5,7 @@
 RAM::RAM() {
     std::memset(memory, 0, RAM_SIZE);   // Initialize RAM with zeroes
     initializeMemoryRegions();          // Initialize arrays with random FP32 values
-
+    initializeAddressDelays();
     read_write_delay = 2;
 }
 
@@ -173,4 +173,14 @@ void RAM::initializeMemoryRegions() {
         std::memcpy(&value, &randomValue, sizeof(value)); // Convert FP32 to uint32_t
         write(address, value, 0, true);
     }
+}
+
+// Initialize addressDelays for all addresses to zero
+void RAM::initializeAddressDelays() {
+    for (uint32_t address = 0; address < RAM_SIZE; address += 4) {
+        AddressDelay& delays = addressDelays[address];
+        delays.store = 0;
+        delays.load = 0;
+    }
+    std::cout << "AddressDelays initialized for all addresses." << std::endl;
 }

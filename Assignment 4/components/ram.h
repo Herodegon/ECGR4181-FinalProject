@@ -24,6 +24,9 @@ public:
 
     RAM();
 
+    // Map to keep track of delays per address
+    std::map<uint32_t, AddressDelay> addressDelays;
+
     // Read a 32-bit word from RAM with simulated latency
     std::vector<uint32_t> read(uint32_t address, bool bypass);
 
@@ -38,13 +41,12 @@ public:
 private:
     uint8_t memory[RAM_SIZE];  // RAM storage array
 
-    // Map to keep track of delays per address
-    std::map<uint32_t, AddressDelay> addressDelays;
-
     int read_write_delay;
 
     // Initialize specific memory regions as per specifications
     void initializeMemoryRegions();
+    
+    void initializeAddressDelays();
 };
 
 #endif // RAM_H

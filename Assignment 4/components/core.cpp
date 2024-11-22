@@ -221,11 +221,17 @@ void Core::store_instruction(std::string name, std::vector<std::string> operands
         effective_addr = base_addr + offset;
 
         uint32_t value = registers[src_reg];
+        
+        float floatValue;
+        std::memcpy(&floatValue, &value, sizeof(floatValue));
 
         std::vector<uint32_t> returnValues = membus->write(core_id, effective_addr, value, 0, false); // ram->write(effective_addr, value, 0, false);
 
         if (returnValues[0] && returnValues[0] != UINT32_MAX){
-            std::cout << "Store: " << name << ": Store " << value << " into memory address " << effective_addr << " successful." << std::endl;
+            if (name == "fsw")
+                std::cout << "Store: " << name << ": Store " << floatValue << " into memory address " << effective_addr << " successful." << std::endl;
+            else
+                std::cout << "Store: " << name << ": Store " << value << " into memory address " << effective_addr << " successful." << std::endl;
             hold_registers[addr_reg] = false;
         }
         else {
@@ -386,11 +392,15 @@ void Core::execute_instruction(Instruction* instr, std::string name, std::vector
         // Debug output
         std::cout << "Execute: FSUB.s: " << op0_reg << ": " << fval0 << " - " 
                 << op1_reg << ": " << fval1 << " = " << dest_reg << ": " << fresult << std::endl;
-    } else if (name == "jal"){
-        int immediate = std::stoi(operands[2]);
-        registers["ra"] = pc + 4;
-        pc = pc + immediate;
-        std::cout << "Execute: JAL: Jumped " << immediate << " to instruction " << pc << "." << std::endl;
+    } else if (name == "jal") {
+        int offset = std::stoi(operands[2]);
+        registers["ra"] = pc + 4; // Save return address
+        pc = pc + offset;
+
+        if (abs(offset) > 0)
+            flush_pipeline(); // Clear the pipeline
+        
+        std::cout << "Execute: JAL: Jumped " << offset << " to instruction " << pc << "." << std::endl;
     }
 
     else if (name == "auipc") {
@@ -479,7 +489,7 @@ std::vector<std::string> Core::split_instruction(const std::string& instruction)
 
 void Core::flush_pipeline() {
     for (auto& stage : pipeline_stages) {
-        if (stage != "Store") pipeline_registers[stage] = nullptr;
+        if (stage == "Fetch" || stage == "Decode") pipeline_registers[stage] = nullptr;
     }
 }
 
